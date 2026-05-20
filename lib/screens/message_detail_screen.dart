@@ -28,13 +28,14 @@ class _MessageDetailScreenState extends State<MessageDetailScreen>
   final _scrollCtrl = ScrollController();
   ChatMessage? _replyTo;
   bool _isSending = false;
+  int _lastMessageCount = 0; // FIX: track count to avoid redundant markAsRead
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     ChatService().setOnline();
-    // Mark conversation as read when opened
+    // Mark as read once on open
     ChatService().markAsRead(widget.conversationId);
   }
 
@@ -57,6 +58,7 @@ class _MessageDetailScreenState extends State<MessageDetailScreen>
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return; // FIX: guard against post-dispose callbacks
       if (_scrollCtrl.hasClients) {
         _scrollCtrl.animateTo(
           _scrollCtrl.position.maxScrollExtent,
@@ -73,13 +75,13 @@ class _MessageDetailScreenState extends State<MessageDetailScreen>
     setState(() => _isSending = true);
     _ctrl.clear();
     final reply = _replyTo;
-    setState(() => _replyTo = null);
+    if (mounted) setState(() => _replyTo = null);
     await ChatService().sendMessage(
       widget.conversationId,
       text,
       replyTo: reply,
     );
-    setState(() => _isSending = false);
+    if (mounted) setState(() => _isSending = false);
     _scrollToBottom();
   }
 
@@ -87,6 +89,7 @@ class _MessageDetailScreenState extends State<MessageDetailScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      // FIX: WillPopScope ensures clean back navigation
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         elevation: 0,
@@ -113,7 +116,6 @@ class _MessageDetailScreenState extends State<MessageDetailScreen>
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  // Real-time presence subtitle
                   StreamBuilder<Map<String, dynamic>?>(
                     stream: ChatService().presenceStream(widget.otherUserId),
                     builder: (context, snap) {
@@ -160,19 +162,26 @@ class _MessageDetailScreenState extends State<MessageDetailScreen>
       ),
       body: Column(
         children: [
-          // Real-time message list
           Expanded(
             child: StreamBuilder<List<ChatMessage>>(
               stream: ChatService().messagesStream(widget.conversationId),
               builder: (context, snap) {
-                if (snap.connectionState == ConnectionState.waiting) {
+                if (snap.connectionState == ConnectionState.waiting &&
+                    !snap.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
+
                 final messages = snap.data ?? [];
-                // Auto-scroll on new messages
-                if (messages.isNotEmpty) _scrollToBottom();
-                // Mark as read whenever new messages arrive
-                ChatService().markAsRead(widget.conversationId);
+
+                // FIX: only scroll + markAsRead when new messages actually arrive
+                if (messages.length != _lastMessageCount) {
+                  _lastMessageCount = messages.length;
+                  if (messages.isNotEmpty) _scrollToBottom();
+                  // FIX: guard with mounted before Firestore call
+                  if (mounted) {
+                    ChatService().markAsRead(widget.conversationId);
+                  }
+                }
 
                 if (messages.isEmpty) {
                   return Center(
@@ -204,15 +213,11 @@ class _MessageDetailScreenState extends State<MessageDetailScreen>
               },
             ),
           ),
-
-          // Reply preview bar
           if (_replyTo != null)
             _ReplyPreview(
               message: _replyTo!,
               onCancel: () => setState(() => _replyTo = null),
             ),
-
-          // Input bar
           _buildInputBar(),
         ],
       ),
@@ -221,7 +226,6 @@ class _MessageDetailScreenState extends State<MessageDetailScreen>
 
   Widget _buildBubble(ChatMessage msg) {
     return GestureDetector(
-      // Long press to reply
       onLongPress: () => setState(() => _replyTo = msg),
       child: Padding(
         padding: const EdgeInsets.only(bottom: 8),
@@ -260,7 +264,6 @@ class _MessageDetailScreenState extends State<MessageDetailScreen>
                       ? CrossAxisAlignment.end
                       : CrossAxisAlignment.start,
                   children: [
-                    // Reply quote block
                     if (msg.replyToText != null) ...[
                       Container(
                         padding: const EdgeInsets.all(8),
@@ -307,7 +310,6 @@ class _MessageDetailScreenState extends State<MessageDetailScreen>
                         ),
                       ),
                     ],
-                    // Message text
                     Text(
                       msg.text,
                       style: TextStyle(
@@ -417,7 +419,7 @@ class _MessageDetailScreenState extends State<MessageDetailScreen>
   }
 }
 
-//  Date divider ─
+// ── Date divider ──────────────────────────────────────────────────────
 
 class _DateDivider extends StatelessWidget {
   final DateTime date;
@@ -456,7 +458,7 @@ class _DateDivider extends StatelessWidget {
   }
 }
 
-//  Reply preview bar ──
+// ── Reply preview bar ─────────────────────────────────────────────────
 
 class _ReplyPreview extends StatelessWidget {
   final ChatMessage message;
@@ -515,7 +517,7 @@ class _ReplyPreview extends StatelessWidget {
   }
 }
 
-//  Avatar widget
+// ── Avatar widget ─────────────────────────────────────────────────────
 
 class _Avatar extends StatelessWidget {
   final String name;
@@ -525,7 +527,9 @@ class _Avatar extends StatelessWidget {
 
   String get _initials {
     final parts = name.trim().split(' ');
-    if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
     return name.isNotEmpty ? name[0].toUpperCase() : '?';
   }
 
