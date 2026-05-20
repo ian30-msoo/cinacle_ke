@@ -81,7 +81,6 @@ class _PostCardLTState extends State<PostCardLT> {
     super.dispose();
   }
 
-  // ── FIX: use ReplyModel.create() with real user name ──
   Future<void> _sendReply() async {
     final text = _replyController.text.trim();
     if (text.isEmpty || _sendingReply) return;
@@ -244,7 +243,6 @@ class _PostCardLTState extends State<PostCardLT> {
             StreamBuilder<List<ReplyModel>>(
               stream: widget.service.streamReplies(post.id),
               builder: (context, snap) {
-                // ── FIX: handle all connection states properly ──
                 if (snap.connectionState == ConnectionState.waiting &&
                     !snap.hasData) {
                   return const Center(
@@ -279,7 +277,6 @@ class _PostCardLTState extends State<PostCardLT> {
                       ),
                     ...replies.map((r) => _ReplyTile(reply: r)),
                     const SizedBox(height: 8),
-                    // ── FIX: only show input if user is logged in ──
                     if (widget.currentUserId.isNotEmpty)
                       _ReplyInput(
                         controller: _replyController,

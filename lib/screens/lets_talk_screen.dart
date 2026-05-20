@@ -17,7 +17,6 @@ class LetsTalkScreen extends StatefulWidget {
 }
 
 class _LetsTalkScreenState extends State<LetsTalkScreen> {
-  // FIX 1: Use singleton instance, not LetsTalkService()
   final _service = LetsTalkService.instance;
 
   String _filter = 'All Topics';
@@ -106,7 +105,6 @@ class _LetsTalkScreenState extends State<LetsTalkScreen> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        // FIX 2: Use local _filterTopics, not AppData.filterTopics
         children: _filterTopics.map((topic) {
           final isActive = _filter == topic;
           return GestureDetector(

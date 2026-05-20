@@ -179,7 +179,7 @@ class AppState extends ChangeNotifier {
         password: password,
       );
 
-      // Sync profile on every sign-in — fixes existing users who signed up
+      // Sync profile on every sign-in
       final user = _auth.currentUser;
       if (user != null) await _syncUserProfile(user);
 

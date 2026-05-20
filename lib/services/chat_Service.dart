@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-/// A single chat message stored in Firestore.
 class ChatMessage {
   final String id;
   final String senderId;
@@ -112,10 +111,15 @@ class AppUser {
 
   factory AppUser.fromDoc(DocumentSnapshot doc) {
     final d = doc.data() as Map<String, dynamic>;
+    final email = d['email'] as String?;
+    final name = (d['displayName'] as String?)?.isNotEmpty == true
+        ? d['displayName'] as String
+        : (d['name'] as String?)?.isNotEmpty == true
+            ? d['name'] as String
+            : email?.split('@').first ?? 'Unknown';
     return AppUser(
       uid: doc.id,
-      displayName:
-          d['displayName'] as String? ?? d['name'] as String? ?? 'Unknown',
+      displayName: name,
       avatarUrl: d['photoURL'] as String? ?? d['avatarUrl'] as String?,
       isOnline: d['online'] as bool? ?? false,
       lastSeen: (d['lastSeen'] as Timestamp?)?.toDate(),
@@ -139,7 +143,12 @@ class ChatService {
   Future<void> setOnline() async {
     final uid = _myUid;
     if (uid == null) return;
+    final user = _auth.currentUser!;
+    final name = user.displayName ?? user.email?.split('@').first ?? 'User';
     await _db.collection('users').doc(uid).set({
+      'displayName': name,
+      'email': user.email,
+      'photoURL': user.photoURL,
       'online': true,
       'lastSeen': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
@@ -167,13 +176,11 @@ class ChatService {
 
   // ── User Directory ────────────────────────────────────────────────
 
-  /// Stream of all users except the current user, ordered online-first.
   Stream<List<AppUser>> usersStream() {
     final uid = _myUid;
     return _db.collection('users').snapshots().map((snap) =>
         snap.docs.map(AppUser.fromDoc).where((u) => u.uid != uid).toList()
           ..sort((a, b) {
-            // Online users first, then by name
             if (a.isOnline && !b.isOnline) return -1;
             if (!a.isOnline && b.isOnline) return 1;
             return a.displayName.compareTo(b.displayName);
@@ -193,13 +200,10 @@ class ChatService {
         .map((snap) => snap.docs.map(Conversation.fromDoc).toList());
   }
 
-  /// Gets or creates a 1-on-1 conversation between current user and [otherUid].
-  /// Returns the conversation ID.
   Future<String> getOrCreateConversation(String otherUid) async {
     final myUid = _myUid!;
     final myUser = _auth.currentUser!;
 
-    // Check if conversation already exists
     final existing = await _db
         .collection('conversations')
         .where('participantIds', arrayContains: myUid)
@@ -210,16 +214,22 @@ class ChatService {
       if (ids.contains(otherUid) && ids.length == 2) return doc.id;
     }
 
-    // Fetch the other user's profile
     final otherDoc = await _db.collection('users').doc(otherUid).get();
     final otherData = otherDoc.data() ?? {};
 
-    // Create new conversation
+    // Use same fallback logic for other user's name
+    final otherEmail = otherData['email'] as String?;
+    final otherName = (otherData['displayName'] as String?)?.isNotEmpty == true
+        ? otherData['displayName'] as String
+        : (otherData['name'] as String?)?.isNotEmpty == true
+            ? otherData['name'] as String
+            : otherEmail?.split('@').first ?? 'Unknown';
+
     final ref = await _db.collection('conversations').add({
       'participantIds': [myUid, otherUid],
       'participantNames': {
-        myUid: myUser.displayName ?? myUser.email ?? 'Me',
-        otherUid: otherData['displayName'] ?? otherData['name'] ?? 'Unknown',
+        myUid: myUser.displayName ?? myUser.email?.split('@').first ?? 'Me',
+        otherUid: otherName,
       },
       'participantAvatars': {
         myUid: myUser.photoURL,
@@ -233,7 +243,7 @@ class ChatService {
     return ref.id;
   }
 
-  //  Messages
+  // ── Messages ──────────────────────────────────────────────────────
 
   Stream<List<ChatMessage>> messagesStream(String conversationId) {
     return _db
@@ -254,7 +264,7 @@ class ChatService {
     if (uid == null || text.trim().isEmpty) return;
 
     final user = _auth.currentUser!;
-    final name = user.displayName ?? user.email ?? 'Me';
+    final name = user.displayName ?? user.email?.split('@').first ?? 'Me';
     final avatar = user.photoURL;
     final convRef = _db.collection('conversations').doc(conversationId);
 

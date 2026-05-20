@@ -252,7 +252,6 @@ class AppDrawer extends StatelessWidget {
                               fontWeight: FontWeight.w600,
                               color: Color(0xFFC62828)),
                         ),
-                        // FIXED: confirmation dialog before signing out
                         onTap: () => _handleSignOut(context),
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 2),

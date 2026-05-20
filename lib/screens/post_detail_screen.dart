@@ -170,7 +170,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                       color: AppColors.textDark,
                                     ),
                                   ),
-                                  // FIX: post.time → timeago.format(post.createdAt)
                                   Text(
                                     timeago.format(post.createdAt),
                                     style: const TextStyle(
@@ -251,7 +250,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                               child: Row(
                                 children: [
                                   Icon(
-                                    // FIX: post.likes → post.isLikedBy / post.likeCount
                                     isLiked
                                         ? Icons.favorite
                                         : Icons.favorite_border,
@@ -277,7 +275,6 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                             const Icon(Icons.chat_bubble_outline,
                                 size: 14, color: AppColors.textMuted),
                             const SizedBox(width: 5),
-                            // FIX: post.replies → post.replyCount
                             Text(
                               '${post.replyCount} ${post.replyCount == 1 ? "Reply" : "Replies"}',
                               style: const TextStyle(

@@ -102,7 +102,6 @@ class AppTheme {
           ),
         ),
       ),
-      // ✅ FIXED: CardThemeData -> CardTheme
       cardTheme: CardThemeData(
         color: AppColors.white,
         elevation: 0,
