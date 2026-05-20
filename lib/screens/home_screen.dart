@@ -3,7 +3,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
-import '../models/post_model.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/profile_dropdown.dart';
 import '../theme/app_data.dart';
@@ -54,7 +53,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onPlayerStateChange() {
     if (!mounted) return;
-    // isReady becomes true once the underlying webview player is loaded
     if (_ytController!.value.isReady && !_playerReady) {
       setState(() => _playerReady = true);
     }

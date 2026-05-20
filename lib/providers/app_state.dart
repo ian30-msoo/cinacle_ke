@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/post_model.dart';
 
 // Wraps Firebase User for clean access across the app.
@@ -33,13 +34,12 @@ class AppUser {
 
 class AppState extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   // Non-auth state
   bool _notificationsEnabled = false;
   bool _darkMode = false;
 
-  // Let's Talk UI state (filter/sort now local to LetsTalkScreen,
-  // but kept here for PostDetailScreen selectedPost)
   PostModel? _selectedPost;
 
   bool get notificationsEnabled => _notificationsEnabled;
@@ -83,7 +83,21 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Sign Up
+  //  Firestore profile write
+  // Called after every sign-in and sign-up so the users collection
+  Future<void> _syncUserProfile(User user) async {
+    final name = user.displayName ?? user.email?.split('@').first ?? 'User';
+    await _db.collection('users').doc(user.uid).set({
+      'displayName': name,
+      'email': user.email,
+      'photoURL': user.photoURL,
+      'online': true,
+      'lastSeen': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  //  Sign Up
+
   Future<bool> signUp({
     required String name,
     required String email,
@@ -112,8 +126,25 @@ class AppState extends ChangeNotifier {
         email: email.trim(),
         password: password,
       );
+
+      // Set the display name on the Firebase Auth profile first
       await credential.user?.updateDisplayName(name.trim());
       await _auth.currentUser?.reload();
+
+      // Now write the full profile to Firestore so the user appears
+      final user = _auth.currentUser;
+      if (user != null) {
+        await _db.collection('users').doc(user.uid).set({
+          'displayName': name.trim(),
+          'email': user.email,
+          'photoURL': user.photoURL,
+          'phone': phone,
+          'online': true,
+          'lastSeen': FieldValue.serverTimestamp(),
+          'createdAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+
       _authError = null;
       return true;
     } on FirebaseAuthException catch (e) {
@@ -127,7 +158,8 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  // Sign In
+  //  Sign In
+
   Future<bool> signIn(String email, String password) async {
     if (email.trim().isEmpty) {
       _authError = 'Please enter your email address.';
@@ -146,6 +178,11 @@ class AppState extends ChangeNotifier {
         email: email.trim(),
         password: password,
       );
+
+      // Sync profile on every sign-in — fixes existing users who signed up
+      final user = _auth.currentUser;
+      if (user != null) await _syncUserProfile(user);
+
       _authError = null;
       return true;
     } on FirebaseAuthException catch (e) {
@@ -159,13 +196,23 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  // Sign Out
+  //  Sign Out
+
   Future<void> signOut() async {
+    // Mark offline before signing out
+    final uid = _auth.currentUser?.uid;
+    if (uid != null) {
+      await _db.collection('users').doc(uid).update({
+        'online': false,
+        'lastSeen': FieldValue.serverTimestamp(),
+      });
+    }
     await _auth.signOut();
     _authError = null;
   }
 
-  // Password Reset
+  //  Password Reset
+
   Future<bool> sendPasswordReset(String email) async {
     if (email.trim().isEmpty) {
       _authError = 'Please enter your email address.';
@@ -185,7 +232,8 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  // Non-auth actions
+  //  Non-auth actions
+
   void toggleNotifications() {
     _notificationsEnabled = !_notificationsEnabled;
     notifyListeners();
@@ -200,9 +248,6 @@ class AppState extends ChangeNotifier {
     _selectedPost = post;
     notifyListeners();
   }
-
-  // FIX 3: filteredPosts removed — posts now come from Firestore via
-  // LetsTalkService.streamPosts(). AppState no longer holds mock post data.
 
   void _setLoading(bool v) {
     _isAuthLoading = v;
