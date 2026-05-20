@@ -1,0 +1,82 @@
+{
+  "project_info": {
+    "project_number": "125218567647",
+    "project_id": "cenacle-link-app",
+    "storage_bucket": "cenacle-link-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:125218567647:android:34ea8b660880c99458006a",
+        "android_client_info": {
+          "package_name": "com.cenacle.cenacle_link"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "125218567647-9rc9t5ndnenc5cub5tpqjth3ev84555k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBcIYJN-8O5aAiAxLrEML5uHNEDcH8Q_6c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "125218567647-9rc9t5ndnenc5cub5tpqjth3ev84555k.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "125218567647-ledi4qsclfdedsesd7qe4393ugfvs60e.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.cenaclelink.app"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:125218567647:android:165b68c942548e2558006a",
+        "android_client_info": {
+          "package_name": "com.cenaclelink.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "125218567647-9rc9t5ndnenc5cub5tpqjth3ev84555k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBcIYJN-8O5aAiAxLrEML5uHNEDcH8Q_6c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "125218567647-9rc9t5ndnenc5cub5tpqjth3ev84555k.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "125218567647-ledi4qsclfdedsesd7qe4393ugfvs60e.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.cenaclelink.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
