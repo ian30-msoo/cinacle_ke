@@ -78,23 +78,49 @@ class Conversation {
     );
   }
 
-  /// Returns the other participant's uid (for 1-on-1 chats).
   String otherUserId(String myUid) =>
       participantIds.firstWhere((id) => id != myUid, orElse: () => '');
 
-  /// Display name shown in the conversation list.
   String displayName(String myUid) {
     final otherId = otherUserId(myUid);
     return participantNames[otherId] ?? 'Unknown';
   }
 
-  /// Avatar of the other participant.
   String? displayAvatar(String myUid) {
     final otherId = otherUserId(myUid);
     return participantAvatars[otherId];
   }
 
   int myUnread(String myUid) => unreadCount[myUid] ?? 0;
+}
+
+/// A user in the directory.
+class AppUser {
+  final String uid;
+  final String displayName;
+  final String? avatarUrl;
+  final bool isOnline;
+  final DateTime? lastSeen;
+
+  const AppUser({
+    required this.uid,
+    required this.displayName,
+    this.avatarUrl,
+    this.isOnline = false,
+    this.lastSeen,
+  });
+
+  factory AppUser.fromDoc(DocumentSnapshot doc) {
+    final d = doc.data() as Map<String, dynamic>;
+    return AppUser(
+      uid: doc.id,
+      displayName:
+          d['displayName'] as String? ?? d['name'] as String? ?? 'Unknown',
+      avatarUrl: d['photoURL'] as String? ?? d['avatarUrl'] as String?,
+      isOnline: d['online'] as bool? ?? false,
+      lastSeen: (d['lastSeen'] as Timestamp?)?.toDate(),
+    );
+  }
 }
 
 /// Manages all Firestore chat operations.
@@ -108,9 +134,8 @@ class ChatService {
 
   String? get _myUid => _auth.currentUser?.uid;
 
-  //  Presence ──
+  // ── Presence ──────────────────────────────────────────────────────
 
-  /// Call when the app comes to foreground / user logs in.
   Future<void> setOnline() async {
     final uid = _myUid;
     if (uid == null) return;
@@ -120,7 +145,6 @@ class ChatService {
     }, SetOptions(merge: true));
   }
 
-  /// Call when the app goes to background / user logs out.
   Future<void> setOffline() async {
     final uid = _myUid;
     if (uid == null) return;
@@ -130,7 +154,6 @@ class ChatService {
     }, SetOptions(merge: true));
   }
 
-  /// Stream of online/lastSeen status for [userId].
   Stream<Map<String, dynamic>?> presenceStream(String userId) {
     return _db.collection('users').doc(userId).snapshots().map((snap) {
       if (!snap.exists) return null;
@@ -142,9 +165,23 @@ class ChatService {
     });
   }
 
-  //  Conversations
+  // ── User Directory ────────────────────────────────────────────────
 
-  /// Stream of all conversations for the current user, ordered by latest.
+  /// Stream of all users except the current user, ordered online-first.
+  Stream<List<AppUser>> usersStream() {
+    final uid = _myUid;
+    return _db.collection('users').snapshots().map((snap) =>
+        snap.docs.map(AppUser.fromDoc).where((u) => u.uid != uid).toList()
+          ..sort((a, b) {
+            // Online users first, then by name
+            if (a.isOnline && !b.isOnline) return -1;
+            if (!a.isOnline && b.isOnline) return 1;
+            return a.displayName.compareTo(b.displayName);
+          }));
+  }
+
+  // ── Conversations ─────────────────────────────────────────────────
+
   Stream<List<Conversation>> conversationsStream() {
     final uid = _myUid;
     if (uid == null) return const Stream.empty();
@@ -157,6 +194,7 @@ class ChatService {
   }
 
   /// Gets or creates a 1-on-1 conversation between current user and [otherUid].
+  /// Returns the conversation ID.
   Future<String> getOrCreateConversation(String otherUid) async {
     final myUid = _myUid!;
     final myUser = _auth.currentUser!;
@@ -195,9 +233,8 @@ class ChatService {
     return ref.id;
   }
 
-  //  Messages ──
+  //  Messages
 
-  /// Real-time stream of messages for [conversationId].
   Stream<List<ChatMessage>> messagesStream(String conversationId) {
     return _db
         .collection('conversations')
@@ -208,7 +245,6 @@ class ChatService {
         .map((snap) => snap.docs.map(ChatMessage.fromDoc).toList());
   }
 
-  /// Sends a message to [conversationId], optionally replying to [replyTo].
   Future<void> sendMessage(
     String conversationId,
     String text, {
@@ -224,7 +260,6 @@ class ChatService {
 
     final batch = _db.batch();
 
-    // Add message document
     final msgRef = convRef.collection('messages').doc();
     batch.set(msgRef, {
       'senderId': uid,
@@ -239,15 +274,15 @@ class ChatService {
       },
     });
 
-    // Update conversation metadata + increment unread for others
     final convSnap = await convRef.get();
     if (convSnap.exists) {
       final data = convSnap.data()!;
       final participants = List<String>.from(data['participantIds'] ?? []);
       final unreadUpdate = <String, dynamic>{};
       for (final pid in participants) {
-        if (pid != uid)
+        if (pid != uid) {
           unreadUpdate['unreadCount.$pid'] = FieldValue.increment(1);
+        }
       }
       batch.update(convRef, {
         'lastMessage': text.trim().length > 60
@@ -261,7 +296,6 @@ class ChatService {
     await batch.commit();
   }
 
-  /// Marks all messages in [conversationId] as read for the current user.
   Future<void> markAsRead(String conversationId) async {
     final uid = _myUid;
     if (uid == null) return;

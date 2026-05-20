@@ -8,6 +8,7 @@ import '../providers/app_state.dart';
 import '../widgets/cenacle_app_bar.dart';
 import '../services/chat_service.dart';
 import 'message_detail_screen.dart';
+import 'user_directory_screen.dart';
 
 class MessagesScreen extends StatelessWidget {
   const MessagesScreen({super.key});
@@ -16,9 +17,40 @@ class MessagesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const CenacleAppBar(
+      appBar: CenacleAppBar(
         title: 'Messages',
         titleIcon: Icons.mail_outline,
+        // ── Compose button opens user directory ──
+        action: Consumer<AppState>(
+          builder: (context, state, _) {
+            if (!state.isLoggedIn) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: ElevatedButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const UserDirectoryScreen(),
+                  ),
+                ),
+                icon: const Icon(Icons.edit_outlined, size: 15),
+                label: const Text(
+                  'New',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.gold,
+                  foregroundColor: AppColors.primaryDark,
+                  shape: const StadiumBorder(),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  elevation: 0,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            );
+          },
+        ),
       ),
       body: Consumer<AppState>(
         builder: (context, state, _) {
@@ -30,7 +62,7 @@ class MessagesScreen extends StatelessWidget {
   }
 }
 
-//  Real-time conversation list ──
+// ── Real-time conversation list ───────────────────────────────────────
 
 class _RealTimeMessagesList extends StatefulWidget {
   const _RealTimeMessagesList();
@@ -46,10 +78,10 @@ class _RealTimeMessagesListState extends State<_RealTimeMessagesList> {
   @override
   void initState() {
     super.initState();
-    // Mark user as online while viewing messages
     ChatService().setOnline();
     _searchCtrl.addListener(
-        () => setState(() => _query = _searchCtrl.text.trim().toLowerCase()));
+      () => setState(() => _query = _searchCtrl.text.trim().toLowerCase()),
+    );
   }
 
   @override
@@ -64,7 +96,7 @@ class _RealTimeMessagesListState extends State<_RealTimeMessagesList> {
 
     return Column(
       children: [
-        // Search bar
+        // ── Search bar ──
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: Container(
@@ -97,7 +129,7 @@ class _RealTimeMessagesListState extends State<_RealTimeMessagesList> {
           ),
         ),
 
-        // Conversation list from Firestore
+        // ── Conversation list ──
         Expanded(
           child: StreamBuilder<List<Conversation>>(
             stream: ChatService().conversationsStream(),
@@ -113,7 +145,15 @@ class _RealTimeMessagesListState extends State<_RealTimeMessagesList> {
               }).toList();
 
               if (convos.isEmpty) {
-                return _EmptyConversations(hasQuery: _query.isNotEmpty);
+                return _EmptyConversations(
+                  hasQuery: _query.isNotEmpty,
+                  onCompose: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const UserDirectoryScreen(),
+                    ),
+                  ),
+                );
               }
 
               return ListView.separated(
@@ -132,7 +172,7 @@ class _RealTimeMessagesListState extends State<_RealTimeMessagesList> {
   }
 }
 
-//  Conversation tile ─
+// ── Conversation tile ─────────────────────────────────────────────────
 
 class _ConvoTile extends StatelessWidget {
   final Conversation convo;
@@ -165,7 +205,7 @@ class _ConvoTile extends StatelessWidget {
       leading: Stack(
         children: [
           _AvatarWidget(name: name, avatarUrl: avatar, size: 48),
-          // Real-time online indicator
+          // Real-time online dot
           StreamBuilder<Map<String, dynamic>?>(
             stream: ChatService().presenceStream(otherId),
             builder: (context, snap) {
@@ -251,11 +291,13 @@ class _ConvoTile extends StatelessWidget {
   }
 }
 
-//  Empty state ─
+// ── Empty state ───────────────────────────────────────────────────────
 
 class _EmptyConversations extends StatelessWidget {
   final bool hasQuery;
-  const _EmptyConversations({required this.hasQuery});
+  final VoidCallback onCompose;
+
+  const _EmptyConversations({required this.hasQuery, required this.onCompose});
 
   @override
   Widget build(BuildContext context) {
@@ -291,11 +333,28 @@ class _EmptyConversations extends StatelessWidget {
             Text(
               hasQuery
                   ? 'Try a different name or keyword.'
-                  : 'Your messages with community members will appear here.',
+                  : 'Start a conversation with a community member.',
               textAlign: TextAlign.center,
               style: const TextStyle(
                   fontSize: 13, color: AppColors.textMuted, height: 1.5),
             ),
+            if (!hasQuery) ...[
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: onCompose,
+                icon: const Icon(Icons.edit_outlined, size: 16),
+                label: const Text('Start a conversation'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryDark,
+                  foregroundColor: AppColors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  elevation: 0,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -303,7 +362,7 @@ class _EmptyConversations extends StatelessWidget {
   }
 }
 
-//  Guest placeholder ──
+// ── Guest placeholder ─────────────────────────────────────────────────
 
 class _GuestMessagesPlaceholder extends StatelessWidget {
   const _GuestMessagesPlaceholder();
@@ -380,7 +439,7 @@ class _GuestMessagesPlaceholder extends StatelessWidget {
   }
 }
 
-//  Avatar widget
+// ── Avatar widget ─────────────────────────────────────────────────────
 
 class _AvatarWidget extends StatelessWidget {
   final String name;
@@ -391,7 +450,9 @@ class _AvatarWidget extends StatelessWidget {
 
   String get _initials {
     final parts = name.trim().split(' ');
-    if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
     return name.isNotEmpty ? name[0].toUpperCase() : '?';
   }
 
@@ -412,22 +473,20 @@ class _AvatarWidget extends StatelessWidget {
     return _initial();
   }
 
-  Widget _initial() {
-    return Container(
-      width: size,
-      height: size,
-      decoration: const BoxDecoration(
-          color: AppColors.primaryDark, shape: BoxShape.circle),
-      child: Center(
-        child: Text(
-          _initials,
-          style: TextStyle(
-            color: AppColors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: size * 0.36,
+  Widget _initial() => Container(
+        width: size,
+        height: size,
+        decoration: const BoxDecoration(
+            color: AppColors.primaryDark, shape: BoxShape.circle),
+        child: Center(
+          child: Text(
+            _initials,
+            style: TextStyle(
+              color: AppColors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: size * 0.36,
+            ),
           ),
         ),
-      ),
-    );
-  }
+      );
 }
