@@ -30,7 +30,7 @@ class MessagesScreen extends StatelessWidget {
   }
 }
 
-// ─── Real-time conversation list ────────────────────────────────────────────
+//  Real-time conversation list ──
 
 class _RealTimeMessagesList extends StatefulWidget {
   const _RealTimeMessagesList();
@@ -132,7 +132,7 @@ class _RealTimeMessagesListState extends State<_RealTimeMessagesList> {
   }
 }
 
-// ─── Conversation tile ───────────────────────────────────────────────────────
+//  Conversation tile ─
 
 class _ConvoTile extends StatelessWidget {
   final Conversation convo;
@@ -251,7 +251,7 @@ class _ConvoTile extends StatelessWidget {
   }
 }
 
-// ─── Empty state ─────────────────────────────────────────────────────────────
+//  Empty state ─
 
 class _EmptyConversations extends StatelessWidget {
   final bool hasQuery;
@@ -303,7 +303,7 @@ class _EmptyConversations extends StatelessWidget {
   }
 }
 
-// ─── Guest placeholder ────────────────────────────────────────────────────────
+//  Guest placeholder ──
 
 class _GuestMessagesPlaceholder extends StatelessWidget {
   const _GuestMessagesPlaceholder();
@@ -380,7 +380,7 @@ class _GuestMessagesPlaceholder extends StatelessWidget {
   }
 }
 
-// ─── Avatar widget ────────────────────────────────────────────────────────────
+//  Avatar widget
 
 class _AvatarWidget extends StatelessWidget {
   final String name;

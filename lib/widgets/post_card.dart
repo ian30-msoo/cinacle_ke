@@ -7,6 +7,8 @@ import '../services/lets_talk_service.dart';
 class PostCardLT extends StatefulWidget {
   final PostModel post;
   final String currentUserId;
+  final String currentUserName; // ← ADDED: real display name
+  final String? currentUserAvatar; // ← ADDED: optional avatar url
   final LetsTalkService service;
   final VoidCallback onLike;
 
@@ -14,6 +16,8 @@ class PostCardLT extends StatefulWidget {
     super.key,
     required this.post,
     required this.currentUserId,
+    required this.currentUserName, // ← ADDED
+    this.currentUserAvatar, // ← ADDED
     required this.service,
     required this.onLike,
   });
@@ -27,10 +31,8 @@ class _PostCardLTState extends State<PostCardLT> {
   final _replyController = TextEditingController();
   bool _sendingReply = false;
 
-  // Correct per-user liked state using the likedBy list
   bool get _liked => widget.post.isLikedBy(widget.currentUserId);
 
-  // Deterministic colour from author name
   static const _avatarBgs = [
     Color(0xFFE8EEF9),
     Color(0xFFFFF3E0),
@@ -79,26 +81,30 @@ class _PostCardLTState extends State<PostCardLT> {
     super.dispose();
   }
 
+  // ── FIX: use ReplyModel.create() with real user name ──
   Future<void> _sendReply() async {
     final text = _replyController.text.trim();
     if (text.isEmpty || _sendingReply) return;
     setState(() => _sendingReply = true);
     try {
-      // Build display name from current user id if possible
-      final displayName = widget.currentUserId.isNotEmpty ? 'You' : 'Anonymous';
-      final initials = displayName[0].toUpperCase();
       await widget.service.addReply(
         widget.post.id,
-        ReplyModel(
-          id: '',
-          authorId: widget.currentUserId,
-          authorName: displayName,
-          authorInitials: initials,
+        ReplyModel.create(
+          uid: widget.currentUserId,
+          displayName: widget.currentUserName.isNotEmpty
+              ? widget.currentUserName
+              : 'Anonymous',
+          avatarUrl: widget.currentUserAvatar,
           body: text,
-          createdAt: DateTime.now(),
         ),
       );
       _replyController.clear();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to send reply: $e')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _sendingReply = false);
     }
@@ -148,7 +154,6 @@ class _PostCardLTState extends State<PostCardLT> {
                         color: AppColors.textDark,
                       ),
                     ),
-                    // Real relative timestamp from Firestore createdAt
                     Text(
                       timeago.format(post.createdAt),
                       style: const TextStyle(
@@ -239,8 +244,25 @@ class _PostCardLTState extends State<PostCardLT> {
             StreamBuilder<List<ReplyModel>>(
               stream: widget.service.streamReplies(post.id),
               builder: (context, snap) {
-                if (snap.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                // ── FIX: handle all connection states properly ──
+                if (snap.connectionState == ConnectionState.waiting &&
+                    !snap.hasData) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  );
+                }
+                if (snap.hasError) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      'Could not load replies: ${snap.error}',
+                      style: const TextStyle(
+                          fontSize: 11, color: Colors.redAccent),
+                    ),
+                  );
                 }
                 final replies = snap.data ?? [];
                 return Column(
@@ -257,11 +279,19 @@ class _PostCardLTState extends State<PostCardLT> {
                       ),
                     ...replies.map((r) => _ReplyTile(reply: r)),
                     const SizedBox(height: 8),
-                    _ReplyInput(
-                      controller: _replyController,
-                      sending: _sendingReply,
-                      onSend: _sendReply,
-                    ),
+                    // ── FIX: only show input if user is logged in ──
+                    if (widget.currentUserId.isNotEmpty)
+                      _ReplyInput(
+                        controller: _replyController,
+                        sending: _sendingReply,
+                        onSend: _sendReply,
+                      )
+                    else
+                      const Text(
+                        'Sign in to reply.',
+                        style:
+                            TextStyle(fontSize: 11, color: AppColors.textMuted),
+                      ),
                   ],
                 );
               },
@@ -273,7 +303,7 @@ class _PostCardLTState extends State<PostCardLT> {
   }
 }
 
-// ── Action button ─────────────────────────────────────────────────────────────
+// ── Action button ──
 
 class _ActionButton extends StatelessWidget {
   final IconData icon;
@@ -306,7 +336,7 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
-// ── Reply tile ────────────────────────────────────────────────────────────────
+// ── Reply tile ──
 
 class _ReplyTile extends StatelessWidget {
   final ReplyModel reply;
@@ -337,11 +367,13 @@ class _ReplyTile extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(reply.authorName,
-                        style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textDark)),
+                    Text(
+                      reply.authorName,
+                      style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textDark),
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       timeago.format(reply.createdAt),
@@ -350,9 +382,11 @@ class _ReplyTile extends StatelessWidget {
                     ),
                   ],
                 ),
-                Text(reply.body,
-                    style: const TextStyle(
-                        fontSize: 11, color: AppColors.textMuted, height: 1.4)),
+                Text(
+                  reply.body,
+                  style: const TextStyle(
+                      fontSize: 11, color: AppColors.textMuted, height: 1.4),
+                ),
               ],
             ),
           ),
@@ -362,7 +396,7 @@ class _ReplyTile extends StatelessWidget {
   }
 }
 
-// ── Reply input ───────────────────────────────────────────────────────────────
+// ── Reply input ──
 
 class _ReplyInput extends StatelessWidget {
   final TextEditingController controller;

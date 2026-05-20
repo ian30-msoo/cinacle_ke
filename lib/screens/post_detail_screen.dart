@@ -404,9 +404,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ──
 // Reply card widget
-// ─────────────────────────────────────────────────────────────────────────────
+// ──
 
 class _ReplyCard extends StatelessWidget {
   final ReplyModel reply;

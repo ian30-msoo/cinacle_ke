@@ -417,7 +417,7 @@ class _MessageDetailScreenState extends State<MessageDetailScreen>
   }
 }
 
-// ─── Date divider ─────────────────────────────────────────────────────────────
+//  Date divider ─
 
 class _DateDivider extends StatelessWidget {
   final DateTime date;
@@ -456,7 +456,7 @@ class _DateDivider extends StatelessWidget {
   }
 }
 
-// ─── Reply preview bar ────────────────────────────────────────────────────────
+//  Reply preview bar ──
 
 class _ReplyPreview extends StatelessWidget {
   final ChatMessage message;
@@ -515,7 +515,7 @@ class _ReplyPreview extends StatelessWidget {
   }
 }
 
-// ─── Avatar widget ────────────────────────────────────────────────────────────
+//  Avatar widget
 
 class _Avatar extends StatelessWidget {
   final String name;

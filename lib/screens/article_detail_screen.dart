@@ -31,7 +31,8 @@ class ArticleDetailScreen extends StatelessWidget {
               children: [
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
-                  child: const Icon(Icons.arrow_back, color: AppColors.white, size: 20),
+                  child: const Icon(Icons.arrow_back,
+                      color: AppColors.white, size: 20),
                 ),
                 const SizedBox(width: 10),
                 const Text(
@@ -137,7 +138,8 @@ class ArticleDetailScreen extends StatelessWidget {
                           padding: const EdgeInsets.only(left: 12),
                           decoration: const BoxDecoration(
                             border: Border(
-                              left: BorderSide(color: AppColors.primary, width: 3),
+                              left: BorderSide(
+                                  color: AppColors.primary, width: 3),
                             ),
                           ),
                           child: const Text(

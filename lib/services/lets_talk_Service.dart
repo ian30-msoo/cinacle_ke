@@ -12,7 +12,7 @@ class LetsTalkService {
   CollectionReference get _posts => _db.collection('lets_talk_posts');
   CollectionReference get _rooms => _db.collection('private_rooms');
 
-  // ─── POSTS ───────────────────────────────────────────────────────────────
+  //  POSTS
 
   Stream<List<PostModel>> streamPosts({
     String? topic,
@@ -48,7 +48,7 @@ class LetsTalkService {
     });
   }
 
-  // ─── REPLIES ─────────────────────────────────────────────────────────────
+  //  REPLIES
 
   Stream<List<ReplyModel>> streamReplies(String postId) => _posts
       .doc(postId)
@@ -85,7 +85,7 @@ class LetsTalkService {
     });
   }
 
-  // ─── PRIVATE ROOMS ────────────────────────────────────────────────────────
+  //  PRIVATE ROOMS
 
   String _hash(String input) => sha256.convert(utf8.encode(input)).toString();
 
@@ -128,7 +128,7 @@ class LetsTalkService {
     return true;
   }
 
-  // ─── ROOM MESSAGES ────────────────────────────────────────────────────────
+  //  ROOM MESSAGES
 
   Stream<List<ReplyModel>> streamRoomMessages(String roomId) => _rooms
       .doc(roomId)

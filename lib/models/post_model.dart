@@ -1,9 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PostModel
-// ─────────────────────────────────────────────────────────────────────────────
-
 class PostModel {
   final String id;
   final String authorId;
@@ -39,12 +35,12 @@ class PostModel {
     this.replies = const [],
   });
 
-  // ── Computed ──────────────────────────────────────────────────────────────
+  // ── Computed ──
 
   int get likeCount => likedBy.length;
   bool isLikedBy(String uid) => likedBy.contains(uid);
 
-  // ── copyWith ──────────────────────────────────────────────────────────────
+  // ── copyWith ──
 
   PostModel copyWith({
     String? id,
@@ -82,7 +78,6 @@ class PostModel {
     );
   }
 
-  // ── Optimistic like toggle ────────────────────────────────────────────────
   // Call this on tap for instant UI feedback; real write done in service.
 
   PostModel toggleLikeLocally(String uid) {
@@ -95,7 +90,6 @@ class PostModel {
     return copyWith(likedBy: updated);
   }
 
-  // ── Optimistic reply add ──────────────────────────────────────────────────
   // Prepend reply so it appears instantly before Firestore confirms.
 
   PostModel addReplyLocally(ReplyModel reply) {
@@ -105,7 +99,7 @@ class PostModel {
     );
   }
 
-  // ── Firestore ─────────────────────────────────────────────────────────────
+  // ── Firestore ─
 
   factory PostModel.fromDoc(DocumentSnapshot doc) {
     final d = doc.data() as Map<String, dynamic>;
@@ -163,7 +157,7 @@ class PostModel {
     }
   }
 
-  // ── Factory: create new post ──────────────────────────────────────────────
+  //  create new post ─
 
   factory PostModel.create({
     required String uid,
@@ -201,9 +195,7 @@ class PostModel {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // ReplyModel
-// ─────────────────────────────────────────────────────────────────────────────
 
 class ReplyModel {
   final String id;
@@ -213,7 +205,7 @@ class ReplyModel {
   final String? authorAvatarUrl;
   final String body;
   final DateTime createdAt;
-  final List<String> likedBy; // replies can also be liked
+  final List<String> likedBy;
 
   const ReplyModel({
     required this.id,
@@ -274,7 +266,7 @@ class ReplyModel {
         'createdAt': FieldValue.serverTimestamp(),
       };
 
-  // Factory: create a reply ready to write
+  //create a reply ready to write
   factory ReplyModel.create({
     required String uid,
     required String displayName,
@@ -300,9 +292,7 @@ class ReplyModel {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // PrivateRoom
-// ─────────────────────────────────────────────────────────────────────────────
 
 class PrivateRoom {
   final String id;

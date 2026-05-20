@@ -288,6 +288,9 @@ class _LetsTalkScreenState extends State<LetsTalkScreen> {
               child: PostCardLT(
                 post: post,
                 currentUserId: _user?.uid ?? '',
+                currentUserName: _user?.displayName ?? 'Anonymous',
+                currentUserAvatar: _user
+                    ?.photoURL, // this is very optional because i have not placed in the setting file
                 service: _service,
                 onLike: () async {
                   final authed = await requireAuth(context);

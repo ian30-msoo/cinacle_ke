@@ -64,27 +64,38 @@ class _DevotionScreenState extends State<DevotionScreen> {
               height: 200,
               width: double.infinity,
               child: CachedNetworkImage(
-                imageUrl: 'https://images.unsplash.com/photo-1533000971552-6a962ff0b9f9?w=800&q=80',
+                imageUrl:
+                    'https://images.unsplash.com/photo-1533000971552-6a962ff0b9f9?w=800&q=80',
                 fit: BoxFit.cover,
                 placeholder: (_, __) => Container(
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomCenter,
-                      colors: [Color(0xFF1565C0), Color(0xFF1A237E), Color(0xFF0D47A1)],
+                      colors: [
+                        Color(0xFF1565C0),
+                        Color(0xFF1A237E),
+                        Color(0xFF0D47A1)
+                      ],
                     ),
                   ),
-                  child: const Icon(Icons.auto_stories, color: Color(0x33FFFFFF), size: 90),
+                  child: const Icon(Icons.auto_stories,
+                      color: Color(0x33FFFFFF), size: 90),
                 ),
                 errorWidget: (_, __, ___) => Container(
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomCenter,
-                      colors: [Color(0xFF1565C0), Color(0xFF1A237E), Color(0xFF0D47A1)],
+                      colors: [
+                        Color(0xFF1565C0),
+                        Color(0xFF1A237E),
+                        Color(0xFF0D47A1)
+                      ],
                     ),
                   ),
-                  child: const Icon(Icons.auto_stories, color: Color(0x33FFFFFF), size: 90),
+                  child: const Icon(Icons.auto_stories,
+                      color: Color(0x33FFFFFF), size: 90),
                 ),
               ),
             ),
@@ -164,7 +175,8 @@ class _DevotionScreenState extends State<DevotionScreen> {
                           fontSize: 13,
                         ),
                       ),
-                      Icon(Icons.chevron_right, color: AppColors.primary, size: 13),
+                      Icon(Icons.chevron_right,
+                          color: AppColors.primary, size: 13),
                     ],
                   ),
                 ),
@@ -213,7 +225,8 @@ class _DevotionScreenState extends State<DevotionScreen> {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -237,18 +250,22 @@ class _DevotionScreenState extends State<DevotionScreen> {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 3),
                               decoration: BoxDecoration(
                                 color: AppColors.background,
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: Row(
                                 children: const [
-                                  Icon(Icons.person_outline, size: 11, color: AppColors.textMuted),
+                                  Icon(Icons.person_outline,
+                                      size: 11, color: AppColors.textMuted),
                                   SizedBox(width: 4),
                                   Text(
                                     'Elisha Mwangi',
-                                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.textMuted),
                                   ),
                                 ],
                               ),
@@ -256,7 +273,8 @@ class _DevotionScreenState extends State<DevotionScreen> {
                             const SizedBox(width: 8),
                             const Text(
                               '2 months ago',
-                              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                              style: TextStyle(
+                                  fontSize: 12, color: AppColors.textMuted),
                             ),
                           ],
                         ),
@@ -266,7 +284,8 @@ class _DevotionScreenState extends State<DevotionScreen> {
                 ),
                 const Padding(
                   padding: EdgeInsets.only(right: 12),
-                  child: Icon(Icons.chevron_right, color: AppColors.textMuted, size: 16),
+                  child: Icon(Icons.chevron_right,
+                      color: AppColors.textMuted, size: 16),
                 ),
               ],
             ),

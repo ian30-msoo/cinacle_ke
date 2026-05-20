@@ -108,7 +108,7 @@ class ChatService {
 
   String? get _myUid => _auth.currentUser?.uid;
 
-  // ─── Presence ──────────────────────────────────────────────────────────────
+  //  Presence ──
 
   /// Call when the app comes to foreground / user logs in.
   Future<void> setOnline() async {
@@ -142,7 +142,7 @@ class ChatService {
     });
   }
 
-  // ─── Conversations ─────────────────────────────────────────────────────────
+  //  Conversations
 
   /// Stream of all conversations for the current user, ordered by latest.
   Stream<List<Conversation>> conversationsStream() {
@@ -195,7 +195,7 @@ class ChatService {
     return ref.id;
   }
 
-  // ─── Messages ──────────────────────────────────────────────────────────────
+  //  Messages ──
 
   /// Real-time stream of messages for [conversationId].
   Stream<List<ChatMessage>> messagesStream(String conversationId) {
