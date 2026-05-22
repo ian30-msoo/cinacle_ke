@@ -828,7 +828,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MediaLibraryScreen()),
+                ),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.gold,
                   padding: EdgeInsets.zero,
@@ -853,9 +856,10 @@ class _HomeScreenState extends State<HomeScreen> {
               childAspectRatio: 2.2,
             ),
             itemCount: AppData.mediaItems.length,
-            itemBuilder: (_, i) {
-              final item = AppData.mediaItems[i];
+            itemBuilder: (_, index) {
+              final item = AppData.mediaItems[index];
               return Container(
+                key: ValueKey('media_item_$index'),
                 decoration: BoxDecoration(
                   color: AppColors.white,
                   borderRadius: BorderRadius.circular(12),
