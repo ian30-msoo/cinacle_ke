@@ -1,14 +1,12 @@
 class AppData {
   AppData._();
 
-  // Used by home_screen.dart service times section
   static const List<Map<String, String>> serviceTimes = [
     {'day': 'Sunday', 'service': 'Morning Service', 'time': '9:00 AM'},
     {'day': 'Sunday', 'service': 'Evening Service', 'time': '5:00 PM'},
     {'day': 'Wednesday', 'service': 'Mid-Week', 'time': '6:30 PM'},
   ];
 
-  // Used by home_screen.dart media library preview tiles
   static const List<Map<String, String>> mediaItems = [
     {'title': 'Sunday Sermon', 'type': 'Audio', 'icon': 'music'},
     {'title': 'Bible Study Notes', 'type': 'Document', 'icon': 'doc'},
@@ -16,7 +14,6 @@ class AppData {
     {'title': 'Prayer Guide', 'type': 'Document', 'icon': 'doc'},
   ];
 
-  // Used by LetsTalkScreen filter chips
   static const List<String> filterTopics = [
     'All Topics',
     'Government',
@@ -35,8 +32,8 @@ class AppData {
       'duration': '58:22',
       'date': 'Mar 10, 2025',
       'category': 'Sunday Service',
-      'youtubeId': 'su5q9Fy-9S4',
-      'thumb': 'https://img.youtube.com/vi/su5q9Fy-9S4/hqdefault.jpg',
+      'youtubeId': 'a2AN3sPLoh0',
+      'thumb': 'https://img.youtube.com/vi/a2AN3sPLoh0/hqdefault.jpg',
     },
     {
       'title': 'Mid-Week Bible Study — John 17',
@@ -44,8 +41,8 @@ class AppData {
       'duration': '44:10',
       'date': 'Mar 5, 2025',
       'category': 'Bible Study',
-      'youtubeId': 'su5q9Fy-9S4',
-      'thumb': 'https://img.youtube.com/vi/su5q9Fy-9S4/hqdefault.jpg',
+      'youtubeId': 'a2AN3sPLoh0',
+      'thumb': 'https://img.youtube.com/vi/a2AN3sPLoh0/hqdefault.jpg',
     },
     {
       'title': 'Worship Night — Abiding in the Word',
@@ -53,26 +50,26 @@ class AppData {
       'duration': '1:12:05',
       'date': 'Feb 28, 2025',
       'category': 'Worship',
-      'youtubeId': 'su5q9Fy-9S4',
-      'thumb': 'https://img.youtube.com/vi/su5q9Fy-9S4/hqdefault.jpg',
+      'youtubeId': 'a2AN3sPLoh0',
+      'thumb': 'https://img.youtube.com/vi/a2AN3sPLoh0/hqdefault.jpg',
     },
     {
       'title': 'Kingdom Kids — Special Session',
-      'speaker': 'Children\'s Ministry',
+      'speaker': "Children's Ministry",
       'duration': '32:44',
       'date': 'Feb 23, 2025',
       'category': 'Ministries',
-      'youtubeId': 'su5q9Fy-9S4',
-      'thumb': 'https://img.youtube.com/vi/su5q9Fy-9S4/hqdefault.jpg',
+      'youtubeId': 'a2AN3sPLoh0',
+      'thumb': 'https://img.youtube.com/vi/a2AN3sPLoh0/hqdefault.jpg',
     },
     {
-      'title': 'The Forge — Men\'s Conference',
+      'title': "The Forge — Men's Conference",
       'speaker': 'Various Speakers',
       'duration': '2:05:18',
       'date': 'Feb 15, 2025',
       'category': 'Conference',
-      'youtubeId': 'su5q9Fy-9S4',
-      'thumb': 'https://img.youtube.com/vi/su5q9Fy-9S4/hqdefault.jpg',
+      'youtubeId': 'a2AN3sPLoh0',
+      'thumb': 'https://img.youtube.com/vi/a2AN3sPLoh0/hqdefault.jpg',
     },
   ];
 
@@ -83,6 +80,8 @@ class AppData {
       'duration': '52:10',
       'date': 'Mar 10, 2025',
       'category': 'Sermon',
+      'url':
+          'https://vwysqlfwbbdtaxyjshuu.supabase.co/storage/v1/object/public/media-library/audio/1773041223406.mp3',
     },
     {
       'title': 'Worship Night Highlights',
@@ -90,6 +89,8 @@ class AppData {
       'duration': '38:44',
       'date': 'Feb 28, 2025',
       'category': 'Worship',
+      'url':
+          'https://vwysqlfwbbdtaxyjshuu.supabase.co/storage/v1/object/public/media-library/audio/1773041223406.mp3',
     },
     {
       'title': 'Prayer & Intercession Session',
@@ -97,6 +98,8 @@ class AppData {
       'duration': '1:02:30',
       'date': 'Feb 20, 2025',
       'category': 'Prayer',
+      'url':
+          'https://vwysqlfwbbdtaxyjshuu.supabase.co/storage/v1/object/public/media-library/audio/1773041223406.mp3',
     },
     {
       'title': 'Bible Study — The Epistles',
@@ -104,6 +107,8 @@ class AppData {
       'duration': '47:55',
       'date': 'Feb 12, 2025',
       'category': 'Bible Study',
+      'url':
+          'https://vwysqlfwbbdtaxyjshuu.supabase.co/storage/v1/object/public/media-library/audio/1773041223406.mp3',
     },
     {
       'title': 'YT Nation Praise Session',
@@ -111,13 +116,17 @@ class AppData {
       'duration': '29:18',
       'date': 'Feb 8, 2025',
       'category': 'Youth',
+      'url':
+          'https://vwysqlfwbbdtaxyjshuu.supabase.co/storage/v1/object/public/media-library/audio/1773041223406.mp3',
     },
     {
-      'title': 'Royal Daughters — Women\'s Fellowship',
-      'speaker': 'Women\'s Ministry',
+      'title': "Royal Daughters — Women's Fellowship",
+      'speaker': "Women's Ministry",
       'duration': '55:00',
       'date': 'Jan 25, 2025',
       'category': 'Ministries',
+      'url':
+          'https://vwysqlfwbbdtaxyjshuu.supabase.co/storage/v1/object/public/media-library/audio/1773041223406.mp3',
     },
   ];
 
@@ -130,6 +139,8 @@ class AppData {
       'category': 'Study Notes',
       'description':
           'Detailed notes from the John 17 series covering eternal life, sanctification and unity.',
+      'url':
+          'https://vwysqlfwbbdtaxyjshuu.supabase.co/storage/v1/object/public/media-library/book/1771328999216.pdf',
     },
     {
       'title': 'Prayer Guide — 21 Days',
@@ -139,6 +150,8 @@ class AppData {
       'category': 'Prayer',
       'description':
           'A structured 21-day prayer guide for personal and corporate intercession.',
+      'url':
+          'https://vwysqlfwbbdtaxyjshuu.supabase.co/storage/v1/object/public/media-library/book/1771328999216.pdf',
     },
     {
       'title': 'Discipleship Handbook',
@@ -148,6 +161,8 @@ class AppData {
       'category': 'Discipleship',
       'description':
           'A comprehensive handbook for new believers walking through foundational Christian truths.',
+      'url':
+          'https://vwysqlfwbbdtaxyjshuu.supabase.co/storage/v1/object/public/media-library/book/1771328999216.pdf',
     },
     {
       'title': 'YT Nation — Faith Foundations',
@@ -157,6 +172,8 @@ class AppData {
       'category': 'Youth',
       'description':
           'Youth-focused study material covering foundational truths of the Christian faith.',
+      'url':
+          'https://vwysqlfwbbdtaxyjshuu.supabase.co/storage/v1/object/public/media-library/book/1771328999216.pdf',
     },
   ];
 }

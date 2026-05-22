@@ -28,7 +28,7 @@ class _MessageDetailScreenState extends State<MessageDetailScreen>
   final _scrollCtrl = ScrollController();
   ChatMessage? _replyTo;
   bool _isSending = false;
-  int _lastMessageCount = 0; // FIX: track count to avoid redundant markAsRead
+  int _lastMessageCount = 0;
 
   @override
   void initState() {
@@ -58,7 +58,7 @@ class _MessageDetailScreenState extends State<MessageDetailScreen>
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return; // FIX: guard against post-dispose callbacks
+      if (!mounted) return;
       if (_scrollCtrl.hasClients) {
         _scrollCtrl.animateTo(
           _scrollCtrl.position.maxScrollExtent,
@@ -89,7 +89,6 @@ class _MessageDetailScreenState extends State<MessageDetailScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      // FIX: WillPopScope ensures clean back navigation
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         elevation: 0,
@@ -173,11 +172,9 @@ class _MessageDetailScreenState extends State<MessageDetailScreen>
 
                 final messages = snap.data ?? [];
 
-                // FIX: only scroll + markAsRead when new messages actually arrive
                 if (messages.length != _lastMessageCount) {
                   _lastMessageCount = messages.length;
                   if (messages.isNotEmpty) _scrollToBottom();
-                  // FIX: guard with mounted before Firestore call
                   if (mounted) {
                     ChatService().markAsRead(widget.conversationId);
                   }

@@ -7,7 +7,7 @@ import '../theme/app_theme.dart';
 import '../providers/app_state.dart';
 import '../widgets/cenacle_app_bar.dart';
 import '../services/chat_service.dart';
-import 'message_detail_screen.dart';
+import 'ministry_detail_screen.dart';
 import 'user_directory_screen.dart';
 
 class MessagesScreen extends StatelessWidget {

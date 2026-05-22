@@ -3,7 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import '../theme/app_theme.dart';
 import '../services/chat_service.dart';
-import 'message_detail_screen.dart';
+import 'ministry_detail_screen.dart';
 
 /// Displays all registered users so the current user can start a conversation.
 class UserDirectoryScreen extends StatefulWidget {

@@ -1,4 +1,6 @@
 import 'package:cinacleke/screens/media_library_screen.dart';
+import 'package:cinacleke/screens/ministry_details_Screen.dart';
+import '../screens/ministry_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
@@ -923,29 +925,76 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  static const List<Map<String, String>> _ministryImages = [
+  static const List<Map<String, dynamic>> _ministries = [
     {
       'name': 'Kingdom Kids',
-      'url':
+      'imageUrl':
           'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=400&q=80',
+      'description':
+          'A children\'s ministry meant to shape children to grow in the ways of the Lord. We create a fun, safe, and nurturing environment where kids discover their identity in Christ.',
+      'leader': 'Isaac Masila',
+      'leaderTitle': 'Ministry Leader',
+      'meetingTime': 'Sundays — 9:00 AM (during Morning Service)',
+      'activities': [
+        'Bible stories and memory verses',
+        'Worship and praise sessions',
+        'Creative arts and crafts',
+        'Character-building activities',
+      ],
+      'contacts': ['masilaisaacmim@gmail.com'],
     },
     {
-      'name': 'Royal daughters',
-      'url':
+      'name': 'Royal Daughters',
+      'imageUrl':
           'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&q=80',
+      'description':
+          'A women\'s fellowship that builds women of faith, purpose, and excellence. We journey together in sisterhood, prayer, and the Word of God.',
+      'leader': 'Isaac Masila',
+      'leaderTitle': 'Ministry Leader',
+      'meetingTime': 'Last Saturday of every month — 10:00 AM',
+      'activities': [
+        'Women\'s Bible study and fellowship',
+        'Prayer and intercession',
+        'Mentorship and discipleship',
+        'Community outreach and service',
+      ],
+      'contacts': ['masilaisaacmim@gmail.com'],
     },
     {
       'name': 'The Forge',
-      'url':
+      'imageUrl':
           'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80',
+      'description':
+          'A men\'s ministry dedicated to forging men of God — strong in faith, integrity, and servant leadership. Iron sharpens iron.',
+      'leader': 'Isaac Masila',
+      'leaderTitle': 'Ministry Leader',
+      'meetingTime': 'Every other Saturday — 7:00 AM',
+      'activities': [
+        'Men\'s accountability groups',
+        'Leadership and character development',
+        'Prayer and fasting sessions',
+        'Community and family impact projects',
+      ],
+      'contacts': ['masilaisaacmim@gmail.com'],
     },
     {
-      'name': 'YT NATION',
-      'url':
+      'name': 'YT Nation',
+      'imageUrl':
           'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&q=80',
+      'description':
+          'The youth ministry of Cenacle — a generation rising in faith, truth, and fire. YT Nation exists to disciple young people into passionate followers of Jesus.',
+      'leader': 'Isaac Masila',
+      'leaderTitle': 'Ministry Leader',
+      'meetingTime': 'Fridays — 5:30 PM',
+      'activities': [
+        'Youth Bible study and discipleship',
+        'Worship and creative arts',
+        'Youth camps and retreats',
+        'Evangelism and outreach',
+      ],
+      'contacts': ['masilaisaacmim@gmail.com'],
     },
   ];
-
   Widget _buildMinistriesSection() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -953,11 +1002,10 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: [
-              const Icon(Icons.groups_outlined,
-                  color: AppColors.gold, size: 18),
-              const SizedBox(width: 8),
-              const Text(
+            children: const [
+              Icon(Icons.groups_outlined, color: AppColors.gold, size: 18),
+              SizedBox(width: 8),
+              Text(
                 'Our Ministries',
                 style: TextStyle(
                   fontSize: 16,
@@ -979,18 +1027,23 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisSpacing: 8,
               childAspectRatio: 1.8,
             ),
-            itemCount: _ministryImages.length,
+            itemCount: _ministries.length,
             itemBuilder: (_, i) {
-              final ministry = _ministryImages[i];
+              final ministry = _ministries[i];
               return GestureDetector(
-                onTap: () {},
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MinistryDetailScreen(ministry: ministry),
+                  ),
+                ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
                       CachedNetworkImage(
-                        imageUrl: ministry['url']!,
+                        imageUrl: ministry['imageUrl'] as String,
                         fit: BoxFit.cover,
                         placeholder: (_, __) =>
                             Container(color: AppColors.border),
@@ -1011,7 +1064,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         left: 12,
                         right: 12,
                         child: Text(
-                          ministry['name']!,
+                          ministry['name'] as String,
                           style: const TextStyle(
                             color: AppColors.white,
                             fontSize: 13,
