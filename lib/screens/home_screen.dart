@@ -1,6 +1,5 @@
 import 'package:cinacleke/screens/media_library_screen.dart';
 import 'package:cinacleke/screens/ministry_details_Screen.dart';
-import '../screens/ministry_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
