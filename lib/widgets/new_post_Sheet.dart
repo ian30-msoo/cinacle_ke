@@ -131,7 +131,7 @@ class _NewPostSheetState extends State<NewPostSheet> {
             ),
             const SizedBox(height: 18),
 
-            // ── Topic chips ──
+            //  Topic chips
             _sectionLabel('TOPIC'),
             const SizedBox(height: 8),
             Wrap(
@@ -167,7 +167,7 @@ class _NewPostSheetState extends State<NewPostSheet> {
             ),
             const SizedBox(height: 16),
 
-            // ── Title ──
+            //  Title
             _sectionLabel('TITLE'),
             const SizedBox(height: 6),
             TextField(
@@ -177,7 +177,7 @@ class _NewPostSheetState extends State<NewPostSheet> {
             ),
             const SizedBox(height: 14),
 
-            // ── Body ──
+            //  Body
             _sectionLabel('BODY'),
             const SizedBox(height: 6),
             TextField(
@@ -190,7 +190,7 @@ class _NewPostSheetState extends State<NewPostSheet> {
             ),
             const SizedBox(height: 12),
 
-            // ── Post anonymously toggle ──
+            //  Post anonymously toggle
             Row(
               children: [
                 Switch(
@@ -210,7 +210,7 @@ class _NewPostSheetState extends State<NewPostSheet> {
             ),
             const SizedBox(height: 16),
 
-            // ── Submit ──
+            //  Submit
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(

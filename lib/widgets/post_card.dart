@@ -122,7 +122,7 @@ class _PostCardLTState extends State<PostCardLT> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Header ──
+          //  Header
           Row(
             children: [
               CircleAvatar(
@@ -180,7 +180,7 @@ class _PostCardLTState extends State<PostCardLT> {
           ),
           const SizedBox(height: 10),
 
-          // ── Content ──
+          //  Content
           Text(
             post.title,
             style: const TextStyle(
@@ -209,7 +209,7 @@ class _PostCardLTState extends State<PostCardLT> {
           ],
           const SizedBox(height: 10),
 
-          // ── Actions ──
+          //  Actions
           Row(
             children: [
               _ActionButton(
@@ -235,7 +235,7 @@ class _PostCardLTState extends State<PostCardLT> {
             ],
           ),
 
-          // ── Reply thread ──
+          //  Reply thread
           if (_showReplies) ...[
             const SizedBox(height: 10),
             const Divider(height: 1, color: AppColors.border),
@@ -300,7 +300,7 @@ class _PostCardLTState extends State<PostCardLT> {
   }
 }
 
-// ── Action button ──
+//  Action button
 
 class _ActionButton extends StatelessWidget {
   final IconData icon;
@@ -333,7 +333,7 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
-// ── Reply tile ──
+//  Reply tile
 
 class _ReplyTile extends StatelessWidget {
   final ReplyModel reply;
@@ -393,7 +393,7 @@ class _ReplyTile extends StatelessWidget {
   }
 }
 
-// ── Reply input ──
+//  Reply input
 
 class _ReplyInput extends StatelessWidget {
   final TextEditingController controller;

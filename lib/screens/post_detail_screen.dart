@@ -127,14 +127,14 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       ),
       body: Column(
         children: [
-          // ── Post + replies (scrollable) ──
+          //  Post + replies (scrollable)
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Post card ──
+                  //  Post card
                   Container(
                     decoration: BoxDecoration(
                       color: AppColors.white,
@@ -288,7 +288,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
                   const SizedBox(height: 16),
 
-                  // ── Replies section ──
+                  //  Replies section
                   const Text(
                     'REPLIES',
                     style: TextStyle(
@@ -342,7 +342,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             ),
           ),
 
-          // ── Reply input bar (pinned to bottom) ──
+          //  Reply input bar (pinned to bottom)
           SafeArea(
             child: Container(
               color: AppColors.white,
@@ -401,9 +401,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 }
 
-// ──
+//
 // Reply card widget
-// ──
+//
 
 class _ReplyCard extends StatelessWidget {
   final ReplyModel reply;

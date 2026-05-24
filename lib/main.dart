@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'theme/app_theme.dart';
 import 'providers/app_state.dart';
@@ -9,6 +10,10 @@ import 'screens/splash_screen.dart';
 import 'screens/main_shell.dart';
 import 'screens/sign_in_screen.dart';
 import 'screens/sign_up_screen.dart';
+import 'services/notification_service.dart';
+
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage msg) async {}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +21,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  await NotificationService.instance.init();
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -40,7 +48,6 @@ class CenacleApp extends StatelessWidget {
         title: 'Cenacle Link',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        // Always start with splash — it decides where to go
         initialRoute: '/splash',
         builder: (context, child) {
           final width = MediaQuery.of(context).size.width;

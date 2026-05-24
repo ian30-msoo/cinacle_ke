@@ -42,7 +42,6 @@ class ChatMessage {
   }
 }
 
-/// Represents a conversation thread between two users.
 class Conversation {
   final String id;
   final List<String> participantIds;
@@ -93,7 +92,6 @@ class Conversation {
   int myUnread(String myUid) => unreadCount[myUid] ?? 0;
 }
 
-/// A user in the directory.
 class AppUser {
   final String uid;
   final String displayName;
@@ -117,17 +115,25 @@ class AppUser {
         : (d['name'] as String?)?.isNotEmpty == true
             ? d['name'] as String
             : email?.split('@').first ?? 'Unknown';
+
+    // FIX: consider user offline if lastSeen > 5 minutes ago,
+    // even if online flag is true (handles app crash / no signout)
+    final rawOnline = d['online'] as bool? ?? false;
+    final lastSeen = (d['lastSeen'] as Timestamp?)?.toDate();
+    final isOnline = rawOnline &&
+        lastSeen != null &&
+        DateTime.now().difference(lastSeen).inMinutes < 5;
+
     return AppUser(
       uid: doc.id,
       displayName: name,
       avatarUrl: d['photoURL'] as String? ?? d['avatarUrl'] as String?,
-      isOnline: d['online'] as bool? ?? false,
-      lastSeen: (d['lastSeen'] as Timestamp?)?.toDate(),
+      isOnline: isOnline,
+      lastSeen: lastSeen,
     );
   }
 }
 
-/// Manages all Firestore chat operations.
 class ChatService {
   static final ChatService _instance = ChatService._();
   factory ChatService() => _instance;
@@ -138,8 +144,10 @@ class ChatService {
 
   String? get _myUid => _auth.currentUser?.uid;
 
-  // ── Presence ──────────────────────────────────────────────────────
+  //  Presence
 
+  /// Call this on a timer every ~2 minutes to keep presence fresh.
+  /// Any user whose lastSeen is > 5 min ago is shown as offline.
   Future<void> setOnline() async {
     final uid = _myUid;
     if (uid == null) return;
@@ -167,14 +175,20 @@ class ChatService {
     return _db.collection('users').doc(userId).snapshots().map((snap) {
       if (!snap.exists) return null;
       final d = snap.data()!;
+      final rawOnline = d['online'] as bool? ?? false;
+      final lastSeen = (d['lastSeen'] as Timestamp?)?.toDate();
+      // FIX: apply same 5-min staleness check in stream
+      final isOnline = rawOnline &&
+          lastSeen != null &&
+          DateTime.now().difference(lastSeen).inMinutes < 5;
       return {
-        'online': d['online'] as bool? ?? false,
-        'lastSeen': (d['lastSeen'] as Timestamp?)?.toDate(),
+        'online': isOnline,
+        'lastSeen': lastSeen,
       };
     });
   }
 
-  // ── User Directory ────────────────────────────────────────────────
+  //  User Directory
 
   Stream<List<AppUser>> usersStream() {
     final uid = _myUid;
@@ -187,7 +201,27 @@ class ChatService {
           }));
   }
 
-  // ── Conversations ─────────────────────────────────────────────────
+  //  FCM token
+
+  /// Save the FCM token to Firestore so Cloud Functions can send
+  /// push notifications to this device.
+  Future<void> saveFcmToken(String token) async {
+    final uid = _myUid;
+    if (uid == null) return;
+    await _db.collection('users').doc(uid).set({
+      'fcmTokens': FieldValue.arrayUnion([token]),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> removeFcmToken(String token) async {
+    final uid = _myUid;
+    if (uid == null) return;
+    await _db.collection('users').doc(uid).set({
+      'fcmTokens': FieldValue.arrayRemove([token]),
+    }, SetOptions(merge: true));
+  }
+
+  //  Conversations
 
   Stream<List<Conversation>> conversationsStream() {
     final uid = _myUid;
@@ -217,7 +251,6 @@ class ChatService {
     final otherDoc = await _db.collection('users').doc(otherUid).get();
     final otherData = otherDoc.data() ?? {};
 
-    // Use same fallback logic for other user's name
     final otherEmail = otherData['email'] as String?;
     final otherName = (otherData['displayName'] as String?)?.isNotEmpty == true
         ? otherData['displayName'] as String
@@ -243,7 +276,7 @@ class ChatService {
     return ref.id;
   }
 
-  // ── Messages ──────────────────────────────────────────────────────
+  //  Messages
 
   Stream<List<ChatMessage>> messagesStream(String conversationId) {
     return _db
@@ -309,8 +342,9 @@ class ChatService {
   Future<void> markAsRead(String conversationId) async {
     final uid = _myUid;
     if (uid == null) return;
-    await _db.collection('conversations').doc(conversationId).update({
-      'unreadCount.$uid': 0,
-    });
+    await _db
+        .collection('conversations')
+        .doc(conversationId)
+        .update({'unreadCount.$uid': 0});
   }
 }

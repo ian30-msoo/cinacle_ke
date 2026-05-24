@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -7,7 +8,7 @@ import '../theme/app_theme.dart';
 import '../providers/app_state.dart';
 import '../widgets/cenacle_app_bar.dart';
 import '../services/chat_service.dart';
-import 'ministry_detail_screen.dart';
+import 'message_detail_screen.dart';
 import 'user_directory_screen.dart';
 
 class MessagesScreen extends StatelessWidget {
@@ -17,40 +18,9 @@ class MessagesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: CenacleAppBar(
+      appBar: const CenacleAppBar(
         title: 'Messages',
         titleIcon: Icons.mail_outline,
-        // ── Compose button opens user directory ──
-        action: Consumer<AppState>(
-          builder: (context, state, _) {
-            if (!state.isLoggedIn) return const SizedBox.shrink();
-            return Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: ElevatedButton.icon(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const UserDirectoryScreen(),
-                  ),
-                ),
-                icon: const Icon(Icons.edit_outlined, size: 15),
-                label: const Text(
-                  'New',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.gold,
-                  foregroundColor: AppColors.primaryDark,
-                  shape: const StadiumBorder(),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  elevation: 0,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
-            );
-          },
-        ),
       ),
       body: Consumer<AppState>(
         builder: (context, state, _) {
@@ -62,7 +32,7 @@ class MessagesScreen extends StatelessWidget {
   }
 }
 
-// ── Real-time conversation list ───────────────────────────────────────
+//  Real-time conversation list
 
 class _RealTimeMessagesList extends StatefulWidget {
   const _RealTimeMessagesList();
@@ -71,14 +41,25 @@ class _RealTimeMessagesList extends StatefulWidget {
   State<_RealTimeMessagesList> createState() => _RealTimeMessagesListState();
 }
 
-class _RealTimeMessagesListState extends State<_RealTimeMessagesList> {
+class _RealTimeMessagesListState extends State<_RealTimeMessagesList>
+    with WidgetsBindingObserver {
   final _searchCtrl = TextEditingController();
   String _query = '';
+  Timer? _presenceTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     ChatService().setOnline();
+
+    // FIX: refresh presence every 2 minutes so lastSeen stays fresh
+    // and the 5-min staleness check in ChatService works correctly
+    _presenceTimer = Timer.periodic(
+      const Duration(minutes: 2),
+      (_) => ChatService().setOnline(),
+    );
+
     _searchCtrl.addListener(
       () => setState(() => _query = _searchCtrl.text.trim().toLowerCase()),
     );
@@ -86,85 +67,118 @@ class _RealTimeMessagesListState extends State<_RealTimeMessagesList> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _presenceTimer?.cancel();
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ChatService().setOnline();
+    } else if (state == AppLifecycleState.paused) {
+      ChatService().setOffline();
+    }
+  }
+
+  void _openDirectory() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const UserDirectoryScreen()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final myUid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
-    return Column(
+    return Stack(
       children: [
-        // ── Search bar ──
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Row(
-              children: [
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 13),
-                  child:
-                      Icon(Icons.search, color: AppColors.textMuted, size: 18),
+        Column(
+          children: [
+            //  Search bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
                 ),
-                Expanded(
-                  child: TextField(
-                    controller: _searchCtrl,
-                    decoration: const InputDecoration(
-                      hintText: 'Search messages...',
-                      hintStyle:
-                          TextStyle(color: Color(0xFF9AA8AD), fontSize: 14),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 12),
+                child: Row(
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 13),
+                      child: Icon(Icons.search,
+                          color: AppColors.textMuted, size: 18),
                     ),
-                  ),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchCtrl,
+                        decoration: const InputDecoration(
+                          hintText: 'Search messages...',
+                          hintStyle:
+                              TextStyle(color: Color(0xFF9AA8AD), fontSize: 14),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
+
+            //  Conversation list
+            Expanded(
+              child: StreamBuilder<List<Conversation>>(
+                stream: ChatService().conversationsStream(),
+                builder: (context, snap) {
+                  if (snap.connectionState == ConnectionState.waiting &&
+                      !snap.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final convos = (snap.data ?? []).where((c) {
+                    if (_query.isEmpty) return true;
+                    return c
+                            .displayName(myUid)
+                            .toLowerCase()
+                            .contains(_query) ||
+                        c.lastMessage.toLowerCase().contains(_query);
+                  }).toList();
+
+                  if (convos.isEmpty) {
+                    return _EmptyConversations(
+                      hasQuery: _query.isNotEmpty,
+                    );
+                  }
+
+                  return ListView.separated(
+                    padding: const EdgeInsets.only(bottom: 80, top: 4),
+                    itemCount: convos.length,
+                    separatorBuilder: (_, __) => const Divider(
+                        height: 1, indent: 76, color: AppColors.border),
+                    itemBuilder: (context, i) =>
+                        _ConvoTile(convo: convos[i], myUid: myUid),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
 
-        // ── Conversation list ──
-        Expanded(
-          child: StreamBuilder<List<Conversation>>(
-            stream: ChatService().conversationsStream(),
-            builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              final convos = (snap.data ?? []).where((c) {
-                if (_query.isEmpty) return true;
-                return c.displayName(myUid).toLowerCase().contains(_query) ||
-                    c.lastMessage.toLowerCase().contains(_query);
-              }).toList();
-
-              if (convos.isEmpty) {
-                return _EmptyConversations(
-                  hasQuery: _query.isNotEmpty,
-                  onCompose: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const UserDirectoryScreen(),
-                    ),
-                  ),
-                );
-              }
-
-              return ListView.separated(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                itemCount: convos.length,
-                separatorBuilder: (_, __) => const Divider(
-                    height: 1, indent: 76, color: AppColors.border),
-                itemBuilder: (context, i) =>
-                    _ConvoTile(convo: convos[i], myUid: myUid),
-              );
-            },
+        //  FAB — compose button (WhatsApp style)
+        Positioned(
+          bottom: 20,
+          right: 20,
+          child: FloatingActionButton(
+            onPressed: _openDirectory,
+            backgroundColor: AppColors.primaryDark,
+            elevation: 4,
+            child: const Icon(Icons.edit_outlined,
+                color: AppColors.white, size: 22),
           ),
         ),
       ],
@@ -172,7 +186,7 @@ class _RealTimeMessagesListState extends State<_RealTimeMessagesList> {
   }
 }
 
-// ── Conversation tile ─────────────────────────────────────────────────
+//  Conversation tile
 
 class _ConvoTile extends StatelessWidget {
   final Conversation convo;
@@ -189,6 +203,7 @@ class _ConvoTile extends StatelessWidget {
 
     return ListTile(
       onTap: () {
+        // FIX: push MessageDetailScreen directly — no extra back-stack issue
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -205,7 +220,6 @@ class _ConvoTile extends StatelessWidget {
       leading: Stack(
         children: [
           _AvatarWidget(name: name, avatarUrl: avatar, size: 48),
-          // Real-time online dot
           StreamBuilder<Map<String, dynamic>?>(
             stream: ChatService().presenceStream(otherId),
             builder: (context, snap) {
@@ -291,13 +305,11 @@ class _ConvoTile extends StatelessWidget {
   }
 }
 
-// ── Empty state ───────────────────────────────────────────────────────
+//  Empty state
 
 class _EmptyConversations extends StatelessWidget {
   final bool hasQuery;
-  final VoidCallback onCompose;
-
-  const _EmptyConversations({required this.hasQuery, required this.onCompose});
+  const _EmptyConversations({required this.hasQuery});
 
   @override
   Widget build(BuildContext context) {
@@ -333,28 +345,11 @@ class _EmptyConversations extends StatelessWidget {
             Text(
               hasQuery
                   ? 'Try a different name or keyword.'
-                  : 'Start a conversation with a community member.',
+                  : 'Tap the pencil icon to start a conversation.',
               textAlign: TextAlign.center,
               style: const TextStyle(
                   fontSize: 13, color: AppColors.textMuted, height: 1.5),
             ),
-            if (!hasQuery) ...[
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: onCompose,
-                icon: const Icon(Icons.edit_outlined, size: 16),
-                label: const Text('Start a conversation'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryDark,
-                  foregroundColor: AppColors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  elevation: 0,
-                ),
-              ),
-            ],
           ],
         ),
       ),
@@ -362,7 +357,7 @@ class _EmptyConversations extends StatelessWidget {
   }
 }
 
-// ── Guest placeholder ─────────────────────────────────────────────────
+//  Guest placeholder
 
 class _GuestMessagesPlaceholder extends StatelessWidget {
   const _GuestMessagesPlaceholder();
@@ -439,7 +434,7 @@ class _GuestMessagesPlaceholder extends StatelessWidget {
   }
 }
 
-// ── Avatar widget ─────────────────────────────────────────────────────
+//  Avatar widget
 
 class _AvatarWidget extends StatelessWidget {
   final String name;

@@ -35,12 +35,12 @@ class PostModel {
     this.replies = const [],
   });
 
-  // ── Computed ──
+  //  Computed
 
   int get likeCount => likedBy.length;
   bool isLikedBy(String uid) => likedBy.contains(uid);
 
-  // ── copyWith ──
+  //  copyWith
 
   PostModel copyWith({
     String? id,
@@ -99,7 +99,7 @@ class PostModel {
     );
   }
 
-  // ── Firestore ─
+  //  Firestore
 
   factory PostModel.fromDoc(DocumentSnapshot doc) {
     final d = doc.data() as Map<String, dynamic>;
@@ -157,7 +157,7 @@ class PostModel {
     }
   }
 
-  //  create new post ─
+  //  create new post
 
   factory PostModel.create({
     required String uid,

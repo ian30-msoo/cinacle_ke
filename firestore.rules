@@ -37,7 +37,7 @@ service cloud.firestore {
       allow update: if isSignedIn()
         && request.auth.uid in resource.data.participantIds;
 
-      // ── MESSAGES (subcollection) ──
+      //  MESSAGES (subcollection) 
       match /messages/{msgId} {
         allow read: if isSignedIn()
           && request.auth.uid in get(/databases/$(database)/documents/conversations/$(convId)).data.participantIds;
@@ -76,7 +76,7 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(['likedBy', 'likeCount', 'replyCount']);
 
-      // ── REPLIES (subcollection) ──
+      //  REPLIES (subcollection) 
       match /replies/{replyId} {
         allow read: if true;
         allow create: if isSignedIn()
@@ -113,7 +113,7 @@ service cloud.firestore {
       allow delete: if isSignedIn()
         && isOwner(resource.data.createdById);
 
-      // ── ROOM MESSAGES (subcollection) ──
+      //  ROOM MESSAGES (subcollection) 
       match /messages/{msgId} {
         allow read: if isSignedIn()
           && request.auth.uid in get(/databases/$(database)/documents/private_rooms/$(roomId)).data.memberIds;

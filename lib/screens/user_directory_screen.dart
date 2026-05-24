@@ -3,9 +3,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import '../theme/app_theme.dart';
 import '../services/chat_service.dart';
-import 'ministry_detail_screen.dart';
+import 'message_detail_screen.dart';
 
-/// Displays all registered users so the current user can start a conversation.
 class UserDirectoryScreen extends StatefulWidget {
   const UserDirectoryScreen({super.key});
 
@@ -16,7 +15,7 @@ class UserDirectoryScreen extends StatefulWidget {
 class _UserDirectoryScreenState extends State<UserDirectoryScreen> {
   final _searchCtrl = TextEditingController();
   String _query = '';
-  String? _loadingUid; // tracks which user tile is loading
+  String? _loadingUid;
 
   @override
   void initState() {
@@ -38,7 +37,12 @@ class _UserDirectoryScreenState extends State<UserDirectoryScreen> {
     try {
       final convId = await ChatService().getOrCreateConversation(user.uid);
       if (!mounted) return;
+
+      // FIX: pop the directory first, then push the chat.
+      // This means back from chat → MessagesScreen (not directory).
+      Navigator.pop(context);
       Navigator.push(
+        // ignore: use_build_context_synchronously
         context,
         MaterialPageRoute(
           builder: (_) => MessageDetailScreen(
@@ -83,7 +87,7 @@ class _UserDirectoryScreenState extends State<UserDirectoryScreen> {
       ),
       body: Column(
         children: [
-          // ── Search bar ──
+          //  Search bar
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: Container(
@@ -132,7 +136,8 @@ class _UserDirectoryScreenState extends State<UserDirectoryScreen> {
             child: StreamBuilder<List<AppUser>>(
               stream: ChatService().usersStream(),
               builder: (context, snap) {
-                if (snap.connectionState == ConnectionState.waiting) {
+                if (snap.connectionState == ConnectionState.waiting &&
+                    !snap.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snap.hasError) {
@@ -173,7 +178,6 @@ class _UserDirectoryScreenState extends State<UserDirectoryScreen> {
                   );
                 }
 
-                // Split into online / offline groups
                 final online = filtered.where((u) => u.isOnline).toList();
                 final offline = filtered.where((u) => !u.isOnline).toList();
 
@@ -206,8 +210,6 @@ class _UserDirectoryScreenState extends State<UserDirectoryScreen> {
     );
   }
 }
-
-// ── Section header ────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
   final String label;
@@ -250,8 +252,6 @@ class _SectionHeader extends StatelessWidget {
     );
   }
 }
-
-//  User tile
 
 class _UserTile extends StatelessWidget {
   final AppUser user;
@@ -328,8 +328,6 @@ class _UserTile extends StatelessWidget {
     );
   }
 }
-
-// ── Avatar widget ─────────────────────────────────────────────────────
 
 class _AvatarWidget extends StatelessWidget {
   final String name;

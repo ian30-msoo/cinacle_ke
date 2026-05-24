@@ -29,7 +29,7 @@ class MinistryDetailScreen extends StatelessWidget {
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          // ── Hero image app bar ──
+          //  Hero image app bar
           SliverAppBar(
             expandedHeight: 260,
             pinned: true,
@@ -95,7 +95,7 @@ class MinistryDetailScreen extends StatelessWidget {
             ),
           ),
 
-          // ── Content ──
+          //  Content
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -384,7 +384,7 @@ class MinistryDetailScreen extends StatelessWidget {
   }
 }
 
-//  Reusable card 
+//  Reusable card
 
 class _Card extends StatelessWidget {
   final Widget child;

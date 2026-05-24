@@ -23,7 +23,7 @@ class AppData {
     'Arts & Culture',
   ];
 
-  // ── Full media library data ──────────────────────────────────────
+  //  Full media library data
 
   static const List<Map<String, String>> videos = [
     {

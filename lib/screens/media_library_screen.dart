@@ -78,7 +78,7 @@ class _MediaLibraryScreenState extends State<MediaLibraryScreen>
       ),
       body: Column(
         children: [
-          // ── Search bar ──
+          //  Search bar
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: Container(
@@ -137,7 +137,7 @@ class _MediaLibraryScreenState extends State<MediaLibraryScreen>
   }
 }
 
-// ── Videos tab ────────────────────────────────────────────────────────
+//  Videos tab
 
 class _VideosTab extends StatelessWidget {
   final String searchQuery;
@@ -326,7 +326,7 @@ class _VideoCard extends StatelessWidget {
   }
 }
 
-// ── YouTube full-screen player ────────────────────────────────────────
+//  YouTube full-screen player
 
 class _YouTubePlayerScreen extends StatefulWidget {
   final String videoId;
@@ -411,7 +411,7 @@ class _YouTubePlayerScreenState extends State<_YouTubePlayerScreen> {
   }
 }
 
-// ── Audio tab ─────────────────────────────────────────────────────────
+//  Audio tab
 
 class _AudioTab extends StatelessWidget {
   final String searchQuery;
@@ -568,7 +568,7 @@ class _AudioCard extends StatelessWidget {
   }
 }
 
-// ── Audio player screen ───────────────────────────────────────────────
+//  Audio player screen
 
 class _AudioPlayerScreen extends StatefulWidget {
   final String url;
@@ -783,7 +783,7 @@ class _AudioPlayerScreenState extends State<_AudioPlayerScreen> {
   }
 }
 
-// ── Books tab ─────────────────────────────────────────────────────────
+//  Books tab
 
 class _BooksTab extends StatelessWidget {
   final String searchQuery;
@@ -972,7 +972,7 @@ class _BookCard extends StatelessWidget {
   }
 }
 
-// ── Empty state ───────────────────────────────────────────────────────
+//  Empty state
 
 class _EmptyState extends StatelessWidget {
   final IconData icon;

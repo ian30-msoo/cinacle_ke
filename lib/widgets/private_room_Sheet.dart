@@ -118,7 +118,7 @@ class _PrivateRoomsSheetState extends State<PrivateRoomsSheet>
   }
 }
 
-//  My Rooms tab ─
+//  My Rooms tab
 
 class _MyRoomsTab extends StatelessWidget {
   final LetsTalkService service;
@@ -319,7 +319,7 @@ class _JoinRoomTabState extends State<_JoinRoomTab> {
       );
 }
 
-//  Create Room dialog ─
+//  Create Room dialog
 
 class _CreateRoomDialog extends StatefulWidget {
   final LetsTalkService service;
@@ -483,7 +483,7 @@ class _CreateRoomDialogState extends State<_CreateRoomDialog> {
   }
 }
 
-//  Room card (in My Rooms list) ──
+//  Room card (in My Rooms list)
 
 class _RoomCard extends StatelessWidget {
   final PrivateRoom room;
