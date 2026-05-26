@@ -70,6 +70,7 @@ class Conversation {
       participantAvatars:
           Map<String, String?>.from(d['participantAvatars'] ?? {}),
       lastMessage: d['lastMessage'] as String? ?? '',
+      // FIX: graceful fallback — serverTimestamp can be null briefly
       lastMessageAt:
           (d['lastMessageAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       unreadCount: Map<String, int>.from(d['unreadCount'] ?? {}),
@@ -116,8 +117,6 @@ class AppUser {
             ? d['name'] as String
             : email?.split('@').first ?? 'Unknown';
 
-    // FIX: consider user offline if lastSeen > 5 minutes ago,
-    // even if online flag is true (handles app crash / no signout)
     final rawOnline = d['online'] as bool? ?? false;
     final lastSeen = (d['lastSeen'] as Timestamp?)?.toDate();
     final isOnline = rawOnline &&
@@ -144,10 +143,8 @@ class ChatService {
 
   String? get _myUid => _auth.currentUser?.uid;
 
-  //  Presence
+  //  Presence 
 
-  /// Call this on a timer every ~2 minutes to keep presence fresh.
-  /// Any user whose lastSeen is > 5 min ago is shown as offline.
   Future<void> setOnline() async {
     final uid = _myUid;
     if (uid == null) return;
@@ -177,7 +174,6 @@ class ChatService {
       final d = snap.data()!;
       final rawOnline = d['online'] as bool? ?? false;
       final lastSeen = (d['lastSeen'] as Timestamp?)?.toDate();
-      // FIX: apply same 5-min staleness check in stream
       final isOnline = rawOnline &&
           lastSeen != null &&
           DateTime.now().difference(lastSeen).inMinutes < 5;
@@ -188,7 +184,7 @@ class ChatService {
     });
   }
 
-  //  User Directory
+  //  User Directory 
 
   Stream<List<AppUser>> usersStream() {
     final uid = _myUid;
@@ -201,10 +197,8 @@ class ChatService {
           }));
   }
 
-  //  FCM token
+  //  FCM token 
 
-  /// Save the FCM token to Firestore so Cloud Functions can send
-  /// push notifications to this device.
   Future<void> saveFcmToken(String token) async {
     final uid = _myUid;
     if (uid == null) return;
@@ -221,23 +215,27 @@ class ChatService {
     }, SetOptions(merge: true));
   }
 
-  //  Conversations
-
+  //  Conversations 
   Stream<List<Conversation>> conversationsStream() {
     final uid = _myUid;
     if (uid == null) return const Stream.empty();
     return _db
         .collection('conversations')
         .where('participantIds', arrayContains: uid)
-        .orderBy('lastMessageAt', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map(Conversation.fromDoc).toList());
+        .map((snap) {
+      final list = snap.docs.map(Conversation.fromDoc).toList();
+      // Sort by lastMessageAt descending in-memory
+      list.sort((a, b) => b.lastMessageAt.compareTo(a.lastMessageAt));
+      return list;
+    });
   }
 
   Future<String> getOrCreateConversation(String otherUid) async {
     final myUid = _myUid!;
     final myUser = _auth.currentUser!;
 
+    // Check for existing conversation
     final existing = await _db
         .collection('conversations')
         .where('participantIds', arrayContains: myUid)
@@ -252,16 +250,18 @@ class ChatService {
     final otherData = otherDoc.data() ?? {};
 
     final otherEmail = otherData['email'] as String?;
-    final otherName = (otherData['displayName'] as String?)?.isNotEmpty == true
-        ? otherData['displayName'] as String
-        : (otherData['name'] as String?)?.isNotEmpty == true
-            ? otherData['name'] as String
-            : otherEmail?.split('@').first ?? 'Unknown';
+    final otherName =
+        (otherData['displayName'] as String?)?.isNotEmpty == true
+            ? otherData['displayName'] as String
+            : (otherData['name'] as String?)?.isNotEmpty == true
+                ? otherData['name'] as String
+                : otherEmail?.split('@').first ?? 'Unknown';
 
     final ref = await _db.collection('conversations').add({
       'participantIds': [myUid, otherUid],
       'participantNames': {
-        myUid: myUser.displayName ?? myUser.email?.split('@').first ?? 'Me',
+        myUid:
+            myUser.displayName ?? myUser.email?.split('@').first ?? 'Me',
         otherUid: otherName,
       },
       'participantAvatars': {
@@ -269,14 +269,14 @@ class ChatService {
         otherUid: otherData['photoURL'] ?? otherData['avatarUrl'],
       },
       'lastMessage': '',
-      'lastMessageAt': FieldValue.serverTimestamp(),
+      'lastMessageAt': Timestamp.now(), // ← real timestamp, not serverTimestamp
       'unreadCount': {myUid: 0, otherUid: 0},
     });
 
     return ref.id;
   }
 
-  //  Messages
+  //  Messages 
 
   Stream<List<ChatMessage>> messagesStream(String conversationId) {
     return _db
@@ -297,7 +297,8 @@ class ChatService {
     if (uid == null || text.trim().isEmpty) return;
 
     final user = _auth.currentUser!;
-    final name = user.displayName ?? user.email?.split('@').first ?? 'Me';
+    final name =
+        user.displayName ?? user.email?.split('@').first ?? 'Me';
     final avatar = user.photoURL;
     final convRef = _db.collection('conversations').doc(conversationId);
 
@@ -320,7 +321,8 @@ class ChatService {
     final convSnap = await convRef.get();
     if (convSnap.exists) {
       final data = convSnap.data()!;
-      final participants = List<String>.from(data['participantIds'] ?? []);
+      final participants =
+          List<String>.from(data['participantIds'] ?? []);
       final unreadUpdate = <String, dynamic>{};
       for (final pid in participants) {
         if (pid != uid) {

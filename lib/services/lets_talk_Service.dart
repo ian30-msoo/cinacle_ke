@@ -67,7 +67,6 @@ class LetsTalkService {
     await batch.commit();
   }
 
-  /// Toggle like on a reply.
   Future<void> toggleReplyLike(
       String postId, String replyId, String userId) async {
     final ref = _posts.doc(postId).collection('replies').doc(replyId);
@@ -117,15 +116,35 @@ class LetsTalkService {
     required String userId,
     required String passcode,
   }) async {
-    final snap = await _rooms.doc(roomId).get();
-    if (!snap.exists) return false;
-    final stored =
-        (snap.data() as Map<String, dynamic>)['passcodeHash'] as String? ?? '';
-    if (_hash(passcode.trim()) != stored) return false;
-    await _rooms.doc(roomId).update({
-      'memberIds': FieldValue.arrayUnion([userId]),
-    });
-    return true;
+    try {
+      bool joined = false;
+      await _db.runTransaction((tx) async {
+        final ref = _rooms.doc(roomId);
+        final snap = await tx.get(ref);
+        if (!snap.exists) return;
+
+        final data = snap.data() as Map<String, dynamic>;
+        final stored = data['passcodeHash'] as String? ?? '';
+
+        // Verify passcode
+        if (_hash(passcode.trim()) != stored) return;
+
+        // Already a member — no-op but return true
+        final members = List<String>.from(data['memberIds'] as List? ?? []);
+        if (members.contains(userId)) {
+          joined = true;
+          return;
+        }
+
+        // Add user to memberIds
+        members.add(userId);
+        tx.update(ref, {'memberIds': members});
+        joined = true;
+      });
+      return joined;
+    } catch (_) {
+      return false;
+    }
   }
 
   //  ROOM MESSAGES
