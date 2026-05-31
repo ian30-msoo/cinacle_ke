@@ -47,7 +47,7 @@ service cloud.firestore {
       }
     }
 
-    //  POSTS  (public read, auth write) ─
+    //  POSTS  (public read, auth write) 
 
     match /lets_talk_posts/{postId} {
       allow read: if true;
@@ -82,8 +82,10 @@ service cloud.firestore {
     //  PRIVATE ROOMS 
 
     match /private_rooms/{roomId} {
-      // Members can read their rooms
-      allow read: if isSignedIn()
+      // Any signed-in user can fetch a room by ID (needed to join via room code)
+      // but only members can list/query rooms
+      allow get: if isSignedIn();
+      allow list: if isSignedIn()
         && request.auth.uid in resource.data.memberIds;
 
       // Any signed-in user can create a room (becomes first member)
@@ -95,12 +97,9 @@ service cloud.firestore {
         && request.resource.data.passcodeHash is string
         && request.resource.data.passcodeHash.size() == 64;
 
-      // FIX: Allow ANY signed-in user to update memberIds only.
-      // This covers two cases:
-      //   1. Joining a room (user not yet a member — passcode checked client-side)
-      //   2. Creator updating room membership
-      // We allow the update if ONLY memberIds changed and the requesting
-      // user is being added (their uid appears in the new memberIds).
+      // Allow ANY signed-in user to update memberIds only.
+      // Covers joining a room (passcode checked client-side)
+      // and creator updating room membership.
       allow update: if isSignedIn()
         && request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(['memberIds'])
@@ -111,8 +110,6 @@ service cloud.firestore {
 
       //  ROOM MESSAGES (subcollection) 
       match /messages/{msgId} {
-        // FIX: allow read/create for ANY signed-in user who is a member.
-        // Using get() to check membership at read/write time.
         allow read: if isSignedIn()
           && request.auth.uid in get(/databases/$(database)/documents/private_rooms/$(roomId)).data.memberIds;
 
