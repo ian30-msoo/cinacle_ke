@@ -3,6 +3,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import '../theme/app_theme.dart';
 import '../models/post_model.dart';
 import '../services/lets_talk_service.dart';
+import '../widgets/avatar_widget.dart';
 
 class PostCardLT extends StatefulWidget {
   final PostModel post;
@@ -125,20 +126,11 @@ class _PostCardLTState extends State<PostCardLT> {
           //  Header
           Row(
             children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundColor:
-                    post.isAnonymous ? AppColors.surfaceLight : _avatarBg,
-                child: post.isAnonymous
-                    ? const Icon(Icons.lock, size: 14, color: AppColors.primary)
-                    : Text(
-                        post.initials,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: _avatarFg,
-                        ),
-                      ),
+              AvatarWidget(
+                initials: post.initials,
+                avatarUrl: post.isAnonymous ? null : post.avatarUrl,
+                isAnonymous: post.isAnonymous,
+                size: 32,
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -346,16 +338,10 @@ class _ReplyTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 12,
-            backgroundColor: const Color(0xFFE8EEF9),
-            child: Text(
-              reply.authorInitials,
-              style: const TextStyle(
-                  fontSize: 8,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF2A3F72)),
-            ),
+          AvatarWidget(
+            initials: reply.authorInitials,
+            avatarUrl: reply.authorAvatarUrl,
+            size: 24,
           ),
           const SizedBox(width: 8),
           Expanded(

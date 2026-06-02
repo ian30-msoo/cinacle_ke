@@ -99,7 +99,8 @@ class _PrivateRoomsSheetState extends State<PrivateRoomsSheet>
             child: TabBarView(
               controller: _tab,
               children: [
-                _MyRoomsTab(service: widget.service, userId: widget.user.uid),
+                // ── FIX: pass full user object, not just uid ──
+                _MyRoomsTab(service: widget.service, user: widget.user),
                 _JoinRoomTab(service: widget.service, user: widget.user),
               ],
             ),
@@ -118,18 +119,19 @@ class _PrivateRoomsSheetState extends State<PrivateRoomsSheet>
   }
 }
 
-//  My Rooms tab
+// ── My Rooms tab ──
+// FIX: changed from userId:String to user:User so we have name + avatar
 
 class _MyRoomsTab extends StatelessWidget {
   final LetsTalkService service;
-  final String userId;
+  final User user;
 
-  const _MyRoomsTab({required this.service, required this.userId});
+  const _MyRoomsTab({required this.service, required this.user});
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<PrivateRoom>>(
-      stream: service.streamMyRooms(userId),
+      stream: service.streamMyRooms(user.uid),
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -158,7 +160,9 @@ class _MyRoomsTab extends StatelessWidget {
               MaterialPageRoute(
                 builder: (_) => RoomChatScreen(
                   room: rooms[i],
-                  userId: userId,
+                  userId: user.uid,
+                  userName: user.displayName ?? 'Anonymous',
+                  userAvatar: user.photoURL,
                   service: service,
                 ),
               ),
@@ -170,7 +174,7 @@ class _MyRoomsTab extends StatelessWidget {
   }
 }
 
-//  Join Room tab
+// ── Join Room tab ──
 
 class _JoinRoomTab extends StatefulWidget {
   final LetsTalkService service;
@@ -319,7 +323,7 @@ class _JoinRoomTabState extends State<_JoinRoomTab> {
       );
 }
 
-//  Create Room dialog
+// ── Create Room dialog ──
 
 class _CreateRoomDialog extends StatefulWidget {
   final LetsTalkService service;
@@ -483,7 +487,7 @@ class _CreateRoomDialogState extends State<_CreateRoomDialog> {
   }
 }
 
-//  Room card (in My Rooms list)
+// ── Room card ──
 
 class _RoomCard extends StatelessWidget {
   final PrivateRoom room;

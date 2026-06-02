@@ -8,12 +8,16 @@ import '../services/lets_talk_service.dart';
 class RoomChatScreen extends StatefulWidget {
   final PrivateRoom room;
   final String userId;
+  final String userName;
+  final String? userAvatar;
   final LetsTalkService service;
 
   const RoomChatScreen({
     super.key,
     required this.room,
     required this.userId,
+    required this.userName,
+    this.userAvatar,
     required this.service,
   });
 
@@ -50,13 +54,21 @@ class _RoomChatScreenState extends State<RoomChatScreen> {
     if (text.isEmpty || _sending) return;
     setState(() => _sending = true);
     try {
+      final parts = widget.userName.trim().split(' ');
+      final initials = parts.length >= 2
+          ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
+          : widget.userName.isNotEmpty
+              ? widget.userName[0].toUpperCase()
+              : 'U';
+
       await widget.service.sendRoomMessage(
         widget.room.id,
         ReplyModel(
           id: '',
           authorId: widget.userId,
-          authorName: 'You', // replace with actual display name
-          authorInitials: 'YO',
+          authorName: widget.userName,
+          authorInitials: initials,
+          authorAvatarUrl: widget.userAvatar,
           body: text,
           createdAt: DateTime.now(),
         ),
