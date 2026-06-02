@@ -4,6 +4,9 @@ import '../theme/app_theme.dart';
 import '../providers/app_state.dart';
 import '../widgets/cenacle_app_bar.dart';
 import '../widgets/toggle_switch.dart';
+import '../widgets/avatar_widget.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -130,69 +133,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSignOutButton(BuildContext context, AppState state) {
-    return GestureDetector(
-      onTap: () async {
-        // Confirm before signing out
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Sign Out?'),
-            content: const Text(
-                'Are you sure you want to sign out of your account?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFFC62828)),
-                child: const Text('Sign Out'),
-              ),
-            ],
-          ),
-        );
-
-        if (confirmed == true && context.mounted) {
-          await context.read<AppState>().signOut();
-          // No navigation needed — Consumer rebuilds the settings card
-          // and the rest of the app updates reactively via auth stream
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('You have been signed out.')),
-            );
-          }
-        }
-      },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFEBEE),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFFFCDD2)),
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.logout, color: Color(0xFFC62828), size: 18),
-            SizedBox(width: 8),
-            Text(
-              'Sign Out',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFFC62828),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
+  // ── Profile card ──
   Widget _buildProfileCard(BuildContext context, AppState state) {
     if (state.isLoggedIn && state.currentUser != null) {
       final user = state.currentUser!;
@@ -208,23 +149,63 @@ class SettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.gold, width: 2),
-              ),
-              child: Center(
-                child: Text(
-                  user.initials,
-                  style: const TextStyle(
-                    color: AppColors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
+            // ── Avatar with camera badge ──
+            GestureDetector(
+              onTap: () => _pickAndUploadAvatar(context, state),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.gold, width: 2),
+                    ),
+                    child: AvatarWidget(
+                      initials: user.initials,
+                      avatarUrl: user.avatarUrl,
+                      size: 60,
+                    ),
                   ),
-                ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: AppColors.gold,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: AppColors.primaryDark, width: 1.5),
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        size: 12,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                  ),
+                  if (state.isAuthLoading)
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black45,
+                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: const Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             const SizedBox(width: 14),
@@ -277,7 +258,7 @@ class SettingsScreen extends StatelessWidget {
       );
     }
 
-    // Guest card — tappable to sign in
+    // ── Guest card ──
     return GestureDetector(
       onTap: () => Navigator.pushNamed(context, '/signin'),
       child: Container(
@@ -322,6 +303,130 @@ class SettingsScreen extends StatelessWidget {
             ),
             const Icon(Icons.chevron_right,
                 color: AppColors.textMuted, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Avatar picker + upload ──
+  Future<void> _pickAndUploadAvatar(
+      BuildContext context, AppState state) async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choose from Gallery'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Take a Photo'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null || !context.mounted) return;
+
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: source,
+      imageQuality: 80,
+      maxWidth: 512,
+      maxHeight: 512,
+    );
+
+    if (picked == null || !context.mounted) return;
+
+    final success = await state.updateAvatar(File(picked.path));
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success
+              ? 'Profile photo updated!'
+              : state.authError ?? 'Upload failed.'),
+        ),
+      );
+    }
+  }
+
+  // ── Sign out button ──
+  Widget _buildSignOutButton(BuildContext context, AppState state) {
+    return GestureDetector(
+      onTap: () async {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Sign Out?'),
+            content: const Text(
+                'Are you sure you want to sign out of your account?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFFC62828)),
+                child: const Text('Sign Out'),
+              ),
+            ],
+          ),
+        );
+
+        if (confirmed == true && context.mounted) {
+          await context.read<AppState>().signOut();
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('You have been signed out.')),
+            );
+          }
+        }
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFEBEE),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFFFCDD2)),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.logout, color: Color(0xFFC62828), size: 18),
+            SizedBox(width: 8),
+            Text(
+              'Sign Out',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFFC62828),
+              ),
+            ),
           ],
         ),
       ),

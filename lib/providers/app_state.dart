@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/post_model.dart';
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
 
-// Wraps Firebase User for clean access across the app.
 class AppUser {
   final String name;
   final String email;
@@ -36,17 +37,14 @@ class AppState extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // Non-auth state
   bool _notificationsEnabled = false;
   bool _darkMode = false;
-
   PostModel? _selectedPost;
 
   bool get notificationsEnabled => _notificationsEnabled;
   bool get darkMode => _darkMode;
   PostModel? get selectedPost => _selectedPost;
 
-  // Auth state
   bool _isAuthLoading = false;
   String? _authError;
 
@@ -83,8 +81,6 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  //  Firestore profile write
-  // Called after every sign-in and sign-up so the users collection
   Future<void> _syncUserProfile(User user) async {
     final name = user.displayName ?? user.email?.split('@').first ?? 'User';
     await _db.collection('users').doc(user.uid).set({
@@ -95,8 +91,6 @@ class AppState extends ChangeNotifier {
       'lastSeen': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
-
-  //  Sign Up
 
   Future<bool> signUp({
     required String name,
@@ -127,11 +121,9 @@ class AppState extends ChangeNotifier {
         password: password,
       );
 
-      // Set the display name on the Firebase Auth profile first
       await credential.user?.updateDisplayName(name.trim());
       await _auth.currentUser?.reload();
 
-      // Now write the full profile to Firestore so the user appears
       final user = _auth.currentUser;
       if (user != null) {
         await _db.collection('users').doc(user.uid).set({
@@ -158,8 +150,6 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  //  Sign In
-
   Future<bool> signIn(String email, String password) async {
     if (email.trim().isEmpty) {
       _authError = 'Please enter your email address.';
@@ -179,7 +169,6 @@ class AppState extends ChangeNotifier {
         password: password,
       );
 
-      // Sync profile on every sign-in
       final user = _auth.currentUser;
       if (user != null) await _syncUserProfile(user);
 
@@ -196,10 +185,7 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  //  Sign Out
-
   Future<void> signOut() async {
-    // Mark offline before signing out
     final uid = _auth.currentUser?.uid;
     if (uid != null) {
       await _db.collection('users').doc(uid).update({
@@ -210,8 +196,6 @@ class AppState extends ChangeNotifier {
     await _auth.signOut();
     _authError = null;
   }
-
-  //  Password Reset
 
   Future<bool> sendPasswordReset(String email) async {
     if (email.trim().isEmpty) {
@@ -232,7 +216,38 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  //  Non-auth actions
+  // ── Avatar upload ──
+  Future<bool> updateAvatar(File imageFile) async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+
+    _setLoading(true);
+    try {
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('avatars')
+          .child('${user.uid}.jpg');
+
+      await ref.putFile(imageFile);
+      final downloadUrl = await ref.getDownloadURL();
+
+      await user.updatePhotoURL(downloadUrl);
+      await _auth.currentUser?.reload();
+
+      await _db.collection('users').doc(user.uid).update({
+        'photoURL': downloadUrl,
+      });
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _authError = 'Failed to update avatar. Please try again.';
+      notifyListeners();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
 
   void toggleNotifications() {
     _notificationsEnabled = !_notificationsEnabled;
