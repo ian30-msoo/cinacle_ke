@@ -92,6 +92,8 @@ class AppState extends ChangeNotifier {
     }, SetOptions(merge: true));
   }
 
+  // ── Sign Up ──
+
   Future<bool> signUp({
     required String name,
     required String email,
@@ -150,6 +152,8 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  // ── Sign In ──
+
   Future<bool> signIn(String email, String password) async {
     if (email.trim().isEmpty) {
       _authError = 'Please enter your email address.';
@@ -185,6 +189,8 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  // ── Sign Out ──
+
   Future<void> signOut() async {
     final uid = _auth.currentUser?.uid;
     if (uid != null) {
@@ -196,6 +202,8 @@ class AppState extends ChangeNotifier {
     await _auth.signOut();
     _authError = null;
   }
+
+  // ── Password Reset ──
 
   Future<bool> sendPasswordReset(String email) async {
     if (email.trim().isEmpty) {
@@ -216,7 +224,8 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  // ── Avatar upload ──
+  // ── Avatar Upload ──
+
   Future<bool> updateAvatar(File imageFile) async {
     final user = _auth.currentUser;
     if (user == null) return false;
@@ -248,6 +257,76 @@ class AppState extends ChangeNotifier {
       _setLoading(false);
     }
   }
+
+  // ── Edit Display Name ──
+
+  Future<bool> updateDisplayName(String newName) async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+    if (newName.trim().isEmpty) {
+      _authError = 'Name cannot be empty.';
+      notifyListeners();
+      return false;
+    }
+
+    _setLoading(true);
+    try {
+      await user.updateDisplayName(newName.trim());
+      await _auth.currentUser?.reload();
+
+      await _db.collection('users').doc(user.uid).update({
+        'displayName': newName.trim(),
+      });
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _authError = 'Failed to update name. Please try again.';
+      notifyListeners();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // ── Update Password ──
+
+  Future<bool> updatePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null || user.email == null) return false;
+
+    if (newPassword.length < 6) {
+      _authError = 'New password must be at least 6 characters.';
+      notifyListeners();
+      return false;
+    }
+
+    _setLoading(true);
+    try {
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+      await user.reauthenticateWithCredential(credential);
+      await user.updatePassword(newPassword);
+
+      _authError = null;
+      return true;
+    } on FirebaseAuthException catch (e) {
+      _authError = _friendlyError(e.code);
+      return false;
+    } catch (e) {
+      _authError = 'Failed to update password. Please try again.';
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // ── Non-auth actions ──
 
   void toggleNotifications() {
     _notificationsEnabled = !_notificationsEnabled;
