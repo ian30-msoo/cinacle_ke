@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:video_player/video_player.dart';
 import '../theme/app_theme.dart';
 import '../models/post_model.dart';
 import '../services/lets_talk_service.dart';
@@ -8,8 +9,8 @@ import '../widgets/avatar_widget.dart';
 class PostCardLT extends StatefulWidget {
   final PostModel post;
   final String currentUserId;
-  final String currentUserName; // ← ADDED: real display name
-  final String? currentUserAvatar; // ← ADDED: optional avatar url
+  final String currentUserName;
+  final String? currentUserAvatar;
   final LetsTalkService service;
   final VoidCallback onLike;
 
@@ -17,8 +18,8 @@ class PostCardLT extends StatefulWidget {
     super.key,
     required this.post,
     required this.currentUserId,
-    required this.currentUserName, // ← ADDED
-    this.currentUserAvatar, // ← ADDED
+    required this.currentUserName,
+    this.currentUserAvatar,
     required this.service,
     required this.onLike,
   });
@@ -123,7 +124,7 @@ class _PostCardLTState extends State<PostCardLT> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          //  Header
+          // Header
           Row(
             children: [
               AvatarWidget(
@@ -172,7 +173,7 @@ class _PostCardLTState extends State<PostCardLT> {
           ),
           const SizedBox(height: 10),
 
-          //  Content
+          // Title
           Text(
             post.title,
             style: const TextStyle(
@@ -182,6 +183,8 @@ class _PostCardLTState extends State<PostCardLT> {
             ),
           ),
           const SizedBox(height: 4),
+
+          // Body
           Text(
             post.body,
             maxLines: 4,
@@ -192,6 +195,13 @@ class _PostCardLTState extends State<PostCardLT> {
               height: 1.5,
             ),
           ),
+
+          // Media (image or video)
+          if (post.mediaUrl != null && post.mediaType != null) ...[
+            const SizedBox(height: 10),
+            _MediaPreview(url: post.mediaUrl!, type: post.mediaType!),
+          ],
+
           if (post.isRepost) ...[
             const SizedBox(height: 4),
             const Text(
@@ -201,7 +211,7 @@ class _PostCardLTState extends State<PostCardLT> {
           ],
           const SizedBox(height: 10),
 
-          //  Actions
+          // Actions
           Row(
             children: [
               _ActionButton(
@@ -227,7 +237,7 @@ class _PostCardLTState extends State<PostCardLT> {
             ],
           ),
 
-          //  Reply thread
+          // Reply thread
           if (_showReplies) ...[
             const SizedBox(height: 10),
             const Divider(height: 1, color: AppColors.border),
@@ -292,7 +302,116 @@ class _PostCardLTState extends State<PostCardLT> {
   }
 }
 
-//  Action button
+// ─────────────────────────────────────────────
+// Media Preview (image or video) in feed
+// ─────────────────────────────────────────────
+
+class _MediaPreview extends StatefulWidget {
+  final String url;
+  final String type;
+
+  const _MediaPreview({required this.url, required this.type});
+
+  @override
+  State<_MediaPreview> createState() => _MediaPreviewState();
+}
+
+class _MediaPreviewState extends State<_MediaPreview> {
+  VideoPlayerController? _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.type == 'video') {
+      _ctrl = VideoPlayerController.networkUrl(Uri.parse(widget.url))
+        ..initialize().then((_) {
+          if (mounted) setState(() {});
+        });
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.type == 'image') {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          widget.url,
+          width: double.infinity,
+          height: 200,
+          fit: BoxFit.cover,
+          loadingBuilder: (_, child, progress) => progress == null
+              ? child
+              : const SizedBox(
+                  height: 200,
+                  child: Center(
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+          errorBuilder: (_, __, ___) => Container(
+            height: 100,
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Center(
+              child: Icon(Icons.broken_image_outlined,
+                  color: AppColors.textMuted, size: 32),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Video
+    if (_ctrl == null || !_ctrl!.value.isInitialized) {
+      return Container(
+        height: 120,
+        decoration: BoxDecoration(
+          color: Colors.black12,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: () => setState(
+          () => _ctrl!.value.isPlaying ? _ctrl!.pause() : _ctrl!.play()),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            AspectRatio(
+              aspectRatio: _ctrl!.value.aspectRatio,
+              child: VideoPlayer(_ctrl!),
+            ),
+            Icon(
+              _ctrl!.value.isPlaying
+                  ? Icons.pause_circle_filled
+                  : Icons.play_circle_filled,
+              size: 48,
+              color: Colors.white.withOpacity(0.85),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Action button
+// ─────────────────────────────────────────────
 
 class _ActionButton extends StatelessWidget {
   final IconData icon;
@@ -325,7 +444,9 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
-//  Reply tile
+// ─────────────────────────────────────────────
+// Reply tile
+// ─────────────────────────────────────────────
 
 class _ReplyTile extends StatelessWidget {
   final ReplyModel reply;
@@ -379,7 +500,9 @@ class _ReplyTile extends StatelessWidget {
   }
 }
 
-//  Reply input
+// ─────────────────────────────────────────────
+// Reply input
+// ─────────────────────────────────────────────
 
 class _ReplyInput extends StatelessWidget {
   final TextEditingController controller;

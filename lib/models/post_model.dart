@@ -15,7 +15,9 @@ class PostModel {
   final bool isRepost;
   final List<String> likedBy;
   final int replyCount;
-  final List<ReplyModel> replies; // loaded separately via streamReplies
+  final List<ReplyModel> replies;
+  final String? mediaUrl;
+  final String? mediaType; // 'image' | 'video' | null
 
   const PostModel({
     required this.id,
@@ -33,15 +35,15 @@ class PostModel {
     this.likedBy = const [],
     this.replyCount = 0,
     this.replies = const [],
+    this.mediaUrl,
+    this.mediaType,
   });
 
-  //  Computed
-
+  // Computed
   int get likeCount => likedBy.length;
   bool isLikedBy(String uid) => likedBy.contains(uid);
 
-  //  copyWith
-
+  // copyWith
   PostModel copyWith({
     String? id,
     String? authorId,
@@ -58,6 +60,8 @@ class PostModel {
     List<String>? likedBy,
     int? replyCount,
     List<ReplyModel>? replies,
+    String? mediaUrl,
+    String? mediaType,
   }) {
     return PostModel(
       id: id ?? this.id,
@@ -75,10 +79,10 @@ class PostModel {
       likedBy: likedBy ?? this.likedBy,
       replyCount: replyCount ?? this.replyCount,
       replies: replies ?? this.replies,
+      mediaUrl: mediaUrl ?? this.mediaUrl,
+      mediaType: mediaType ?? this.mediaType,
     );
   }
-
-  // Call this on tap for instant UI feedback; real write done in service.
 
   PostModel toggleLikeLocally(String uid) {
     final updated = List<String>.from(likedBy);
@@ -90,8 +94,6 @@ class PostModel {
     return copyWith(likedBy: updated);
   }
 
-  // Prepend reply so it appears instantly before Firestore confirms.
-
   PostModel addReplyLocally(ReplyModel reply) {
     return copyWith(
       replies: [reply, ...replies],
@@ -99,8 +101,7 @@ class PostModel {
     );
   }
 
-  //  Firestore
-
+  // Firestore
   factory PostModel.fromDoc(DocumentSnapshot doc) {
     final d = doc.data() as Map<String, dynamic>;
     return PostModel(
@@ -119,6 +120,8 @@ class PostModel {
       likedBy: List<String>.from(d['likedBy'] as List<dynamic>? ?? []),
       replyCount: d['replyCount'] as int? ?? 0,
       replies: const [],
+      mediaUrl: d['mediaUrl'] as String?,
+      mediaType: d['mediaType'] as String?,
     );
   }
 
@@ -137,9 +140,10 @@ class PostModel {
         'likeCount': likedBy.length,
         'replyCount': replyCount,
         'createdAt': FieldValue.serverTimestamp(),
+        'mediaUrl': mediaUrl,
+        'mediaType': mediaType,
       };
 
-  // Auto-derive tagIcon from topic
   static String _tagIconForTopic(String topic) {
     switch (topic) {
       case 'Government':
@@ -157,8 +161,6 @@ class PostModel {
     }
   }
 
-  //  create new post
-
   factory PostModel.create({
     required String uid,
     required String displayName,
@@ -167,12 +169,14 @@ class PostModel {
     required String title,
     required String body,
     bool isAnonymous = false,
+    String? mediaUrl,
+    String? mediaType,
   }) {
     return PostModel(
       id: '',
       authorId: uid,
       author: displayName,
-      initials: _initialsFrom(displayName),
+      initials: initialsFrom(displayName),
       avatarUrl: avatarUrl,
       createdAt: DateTime.now(),
       tag: topic,
@@ -183,10 +187,13 @@ class PostModel {
       likedBy: const [],
       replyCount: 0,
       replies: const [],
+      mediaUrl: mediaUrl,
+      mediaType: mediaType,
     );
   }
 
-  static String _initialsFrom(String name) {
+  // Public so other files can use it
+  static String initialsFrom(String name) {
     final parts = name.trim().split(' ');
     if (parts.length >= 2) {
       return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
@@ -195,7 +202,9 @@ class PostModel {
   }
 }
 
+// ─────────────────────────────────────────────
 // ReplyModel
+// ─────────────────────────────────────────────
 
 class ReplyModel {
   final String id;
@@ -221,7 +230,6 @@ class ReplyModel {
   int get likeCount => likedBy.length;
   bool isLikedBy(String uid) => likedBy.contains(uid);
 
-  // Optimistic like toggle on a reply
   ReplyModel toggleLikeLocally(String uid) {
     final updated = List<String>.from(likedBy);
     if (updated.contains(uid)) {
@@ -266,24 +274,17 @@ class ReplyModel {
         'createdAt': FieldValue.serverTimestamp(),
       };
 
-  //create a reply ready to write
   factory ReplyModel.create({
     required String uid,
     required String displayName,
     String? avatarUrl,
     required String body,
   }) {
-    final parts = displayName.trim().split(' ');
-    final initials = parts.length >= 2
-        ? '${parts.first[0]}${parts.last[0]}'.toUpperCase()
-        : displayName.isNotEmpty
-            ? displayName[0].toUpperCase()
-            : 'U';
     return ReplyModel(
       id: '',
       authorId: uid,
       authorName: displayName,
-      authorInitials: initials,
+      authorInitials: PostModel.initialsFrom(displayName),
       authorAvatarUrl: avatarUrl,
       body: body.trim(),
       createdAt: DateTime.now(),
@@ -292,7 +293,9 @@ class ReplyModel {
   }
 }
 
+// ─────────────────────────────────────────────
 // PrivateRoom
+// ─────────────────────────────────────────────
 
 class PrivateRoom {
   final String id;

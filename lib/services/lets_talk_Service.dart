@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../models/post_model.dart';
 
 class LetsTalkService {
@@ -12,7 +15,49 @@ class LetsTalkService {
   CollectionReference get _posts => _db.collection('lets_talk_posts');
   CollectionReference get _rooms => _db.collection('private_rooms');
 
-  //  POSTS
+  // ─────────────────────────────────────────────
+  // MEDIA UPLOAD
+  // ─────────────────────────────────────────────
+
+  /// Mobile upload — uses File (Android / iOS)
+  Future<String> uploadMedia(File file, String type) async {
+    final ext = file.path.split('.').last.toLowerCase();
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.$ext';
+    final ref = FirebaseStorage.instance
+        .ref()
+        .child('lets_talk_media')
+        .child('${type}s')
+        .child(fileName);
+
+    final task = await ref.putFile(
+      file,
+      SettableMetadata(
+          contentType: type == 'image' ? 'image/$ext' : 'video/$ext'),
+    );
+    return await task.ref.getDownloadURL();
+  }
+
+  /// Web upload — uses raw bytes (Flutter Web doesn't support dart:io File)
+  Future<String> uploadMediaBytes(Uint8List bytes, String type) async {
+    final ext = type == 'image' ? 'jpg' : 'mp4';
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.$ext';
+    final ref = FirebaseStorage.instance
+        .ref()
+        .child('lets_talk_media')
+        .child('${type}s')
+        .child(fileName);
+
+    final task = await ref.putData(
+      bytes,
+      SettableMetadata(
+          contentType: type == 'image' ? 'image/jpeg' : 'video/mp4'),
+    );
+    return await task.ref.getDownloadURL();
+  }
+
+  // ─────────────────────────────────────────────
+  // POSTS
+  // ─────────────────────────────────────────────
 
   Stream<List<PostModel>> streamPosts({
     String? topic,
@@ -48,7 +93,9 @@ class LetsTalkService {
     });
   }
 
-  //  REPLIES
+  // ─────────────────────────────────────────────
+  // REPLIES
+  // ─────────────────────────────────────────────
 
   Stream<List<ReplyModel>> streamReplies(String postId) => _posts
       .doc(postId)
@@ -84,7 +131,9 @@ class LetsTalkService {
     });
   }
 
-  //  PRIVATE ROOMS
+  // ─────────────────────────────────────────────
+  // PRIVATE ROOMS
+  // ─────────────────────────────────────────────
 
   String _hash(String input) => sha256.convert(utf8.encode(input)).toString();
 
@@ -126,17 +175,14 @@ class LetsTalkService {
         final data = snap.data() as Map<String, dynamic>;
         final stored = data['passcodeHash'] as String? ?? '';
 
-        // Verify passcode
         if (_hash(passcode.trim()) != stored) return;
 
-        // Already a member — no-op but return true
         final members = List<String>.from(data['memberIds'] as List? ?? []);
         if (members.contains(userId)) {
           joined = true;
           return;
         }
 
-        // Add user to memberIds
         members.add(userId);
         tx.update(ref, {'memberIds': members});
         joined = true;
@@ -147,7 +193,9 @@ class LetsTalkService {
     }
   }
 
-  //  ROOM MESSAGES
+  // ─────────────────────────────────────────────
+  // ROOM MESSAGES
+  // ─────────────────────────────────────────────
 
   Stream<List<ReplyModel>> streamRoomMessages(String roomId) => _rooms
       .doc(roomId)
