@@ -318,15 +318,24 @@ class _MediaPreview extends StatefulWidget {
 
 class _MediaPreviewState extends State<_MediaPreview> {
   VideoPlayerController? _ctrl;
+  bool _imageError = false;
+  bool _imageLoaded = false;
 
   @override
   void initState() {
     super.initState();
     if (widget.type == 'video') {
-      _ctrl = VideoPlayerController.networkUrl(Uri.parse(widget.url))
-        ..initialize().then((_) {
-          if (mounted) setState(() {});
-        });
+      _initVideo();
+    }
+  }
+
+  Future<void> _initVideo() async {
+    try {
+      _ctrl = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+      await _ctrl!.initialize();
+      if (mounted) setState(() {});
+    } catch (_) {
+      if (mounted) setState(() {});
     }
   }
 
@@ -336,53 +345,131 @@ class _MediaPreviewState extends State<_MediaPreview> {
     super.dispose();
   }
 
+  void _retryImage() {
+    setState(() {
+      _imageError = false;
+      _imageLoaded = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.type == 'image') {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.network(
-          widget.url,
-          width: double.infinity,
-          height: 200,
-          fit: BoxFit.cover,
-          loadingBuilder: (_, child, progress) => progress == null
-              ? child
-              : const SizedBox(
-                  height: 200,
-                  child: Center(
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
+      return _buildImage();
+    }
+    return _buildVideo();
+  }
+
+  // ── IMAGE ──────────────────────────────────
+
+  Widget _buildImage() {
+    // Show retry UI if image failed
+    if (_imageError) {
+      return GestureDetector(
+        onTap: _retryImage,
+        child: Container(
+          height: 160,
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: const Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.refresh_rounded,
+                    color: AppColors.textMuted, size: 28),
+                SizedBox(height: 6),
+                Text(
+                  'Image failed to load\nTap to retry',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                 ),
-          errorBuilder: (_, __, ___) => Container(
-            height: 100,
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Center(
-              child: Icon(Icons.broken_image_outlined,
-                  color: AppColors.textMuted, size: 32),
+              ],
             ),
           ),
         ),
       );
     }
 
-    // Video
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Stack(
+        children: [
+          // Shimmer placeholder while loading
+          if (!_imageLoaded)
+            Container(
+              height: 200,
+              width: double.infinity,
+              color: AppColors.background,
+              child: const Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+
+          // Actual image
+          Image.network(
+            widget.url,
+            width: double.infinity,
+            height: 200,
+            fit: BoxFit.cover,
+            // Force fresh load — avoids stale cache issues
+            headers: const {'Cache-Control': 'no-cache'},
+            frameBuilder: (_, child, frame, wasSynchronouslyLoaded) {
+              if (wasSynchronouslyLoaded || frame != null) {
+                // Image is ready — mark loaded after next frame
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted && !_imageLoaded) {
+                    setState(() => _imageLoaded = true);
+                  }
+                });
+                return child;
+              }
+              return const SizedBox.shrink();
+            },
+            errorBuilder: (_, error, __) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted && !_imageError) {
+                  setState(() => _imageError = true);
+                }
+              });
+              return const SizedBox.shrink();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── VIDEO ──────────────────────────────────
+
+  Widget _buildVideo() {
+    // Still initializing
     if (_ctrl == null || !_ctrl!.value.isInitialized) {
       return Container(
-        height: 120,
+        height: 180,
         decoration: BoxDecoration(
-          color: Colors.black12,
+          color: Colors.black87,
           borderRadius: BorderRadius.circular(8),
         ),
         child: const Center(
-          child: CircularProgressIndicator(strokeWidth: 2),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
+              SizedBox(height: 10),
+              Text(
+                'Loading video…',
+                style: TextStyle(color: Colors.white54, fontSize: 11),
+              ),
+            ],
+          ),
         ),
       );
     }
 
+    // Video ready
     return GestureDetector(
       onTap: () => setState(
           () => _ctrl!.value.isPlaying ? _ctrl!.pause() : _ctrl!.play()),
@@ -395,12 +482,37 @@ class _MediaPreviewState extends State<_MediaPreview> {
               aspectRatio: _ctrl!.value.aspectRatio,
               child: VideoPlayer(_ctrl!),
             ),
-            Icon(
-              _ctrl!.value.isPlaying
-                  ? Icons.pause_circle_filled
-                  : Icons.play_circle_filled,
-              size: 48,
-              color: Colors.white.withOpacity(0.85),
+            // Play/pause overlay
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.45),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _ctrl!.value.isPlaying
+                    ? Icons.pause_rounded
+                    : Icons.play_arrow_rounded,
+                color: Colors.white,
+                size: 30,
+              ),
+            ),
+            // Progress bar at bottom
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: VideoProgressIndicator(
+                _ctrl!,
+                allowScrubbing: true,
+                colors: VideoProgressColors(
+                  playedColor: AppColors.primary,
+                  bufferedColor: Colors.white30,
+                  backgroundColor: Colors.black26,
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 4),
+              ),
             ),
           ],
         ),

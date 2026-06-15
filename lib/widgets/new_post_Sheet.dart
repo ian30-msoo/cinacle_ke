@@ -3,32 +3,11 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
 import '../theme/app_theme.dart';
 import '../models/post_model.dart';
 import '../services/lets_talk_service.dart';
-
-extension _LetsTalkServiceUploadExtension on LetsTalkService {
-  Future<String> uploadMediaBytes(Uint8List bytes, String type) async {
-    final ext = type == 'image' ? 'jpg' : 'mp4';
-    final fileName = '${DateTime.now().millisecondsSinceEpoch}.$ext';
-    final ref = FirebaseStorage.instance
-        .ref()
-        .child('lets_talk_media')
-        .child('${type}s')
-        .child(fileName);
-
-    final task = await ref.putData(
-      bytes,
-      SettableMetadata(
-        contentType: type == 'image' ? 'image/jpeg' : 'video/mp4',
-      ),
-    );
-    return await task.ref.getDownloadURL();
-  }
-}
 
 class NewPostSheet extends StatefulWidget {
   final LetsTalkService service;
@@ -101,10 +80,8 @@ class _NewPostSheetState extends State<NewPostSheet> {
     VideoPlayerController? newCtrl;
 
     if (kIsWeb) {
-      // Web: read as bytes (Image.file not supported on web)
       bytes = await picked.readAsBytes();
     } else {
-      // Mobile: use File
       file = File(picked.path);
       if (type == 'video') {
         newCtrl = VideoPlayerController.file(file);
@@ -149,7 +126,6 @@ class _NewPostSheetState extends State<NewPostSheet> {
                 _pickMedia(ImageSource.gallery, 'image');
               },
             ),
-            // Camera not available on web
             if (!kIsWeb)
               _MediaOption(
                 icon: Icons.camera_alt_outlined,
@@ -193,7 +169,7 @@ class _NewPostSheetState extends State<NewPostSheet> {
     });
   }
 
-  bool get _hasMedia => kIsWeb ? _mediaBytes != null : _mediaFile != null;
+  bool get _hasMedia => _mediaFile != null || _mediaBytes != null;
 
   // ─────────────────────────────────────────────
   // SUBMIT
@@ -499,7 +475,7 @@ class _NewPostSheetState extends State<NewPostSheet> {
             ),
           ),
 
-        // Remove button (top right)
+        // Remove button
         Positioned(
           top: 6,
           right: 6,
@@ -516,7 +492,7 @@ class _NewPostSheetState extends State<NewPostSheet> {
           ),
         ),
 
-        // Change button (bottom right)
+        // Change button
         Positioned(
           bottom: 6,
           right: 6,
@@ -545,7 +521,6 @@ class _NewPostSheetState extends State<NewPostSheet> {
   }
 
   Widget _buildMediaContent() {
-    // IMAGE
     if (_mediaType == 'image') {
       if (kIsWeb && _mediaBytes != null) {
         return Image.memory(
@@ -554,7 +529,8 @@ class _NewPostSheetState extends State<NewPostSheet> {
           height: 200,
           fit: BoxFit.cover,
         );
-      } else if (_mediaFile != null) {
+      }
+      if (_mediaFile != null) {
         return Image.file(
           _mediaFile!,
           width: double.infinity,
@@ -564,39 +540,34 @@ class _NewPostSheetState extends State<NewPostSheet> {
       }
     }
 
-    // VIDEO — mobile with controller
-    if (_mediaType == 'video' &&
-        !kIsWeb &&
-        _videoCtrl != null &&
-        _videoCtrl!.value.isInitialized) {
-      return AspectRatio(
-        aspectRatio: _videoCtrl!.value.aspectRatio,
-        child: VideoPlayer(_videoCtrl!),
-      );
-    }
-
-    // VIDEO — web (no preview available, show placeholder)
-    if (_mediaType == 'video' && kIsWeb) {
-      return Container(
-        height: 120,
-        color: Colors.black87,
-        child: const Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.videocam, color: Colors.white, size: 36),
-              SizedBox(height: 8),
-              Text(
-                'Video selected',
-                style: TextStyle(color: Colors.white70, fontSize: 12),
-              ),
-            ],
+    if (_mediaType == 'video') {
+      if (kIsWeb) {
+        return Container(
+          height: 140,
+          color: Colors.black87,
+          child: const Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.videocam, color: Colors.white, size: 36),
+                SizedBox(height: 8),
+                Text(
+                  'Video selected — will upload on post',
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
           ),
-        ),
-      );
+        );
+      }
+      if (_videoCtrl != null && _videoCtrl!.value.isInitialized) {
+        return AspectRatio(
+          aspectRatio: _videoCtrl!.value.aspectRatio,
+          child: VideoPlayer(_videoCtrl!),
+        );
+      }
     }
 
-    // Loading
     return Container(
       height: 120,
       color: Colors.black12,

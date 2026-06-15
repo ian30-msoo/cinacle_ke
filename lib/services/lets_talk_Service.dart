@@ -19,7 +19,7 @@ class LetsTalkService {
   // MEDIA UPLOAD
   // ─────────────────────────────────────────────
 
-  /// Mobile upload — uses File (Android / iOS)
+  /// Mobile: upload from File
   Future<String> uploadMedia(File file, String type) async {
     final ext = file.path.split('.').last.toLowerCase();
     final fileName = '${DateTime.now().millisecondsSinceEpoch}.$ext';
@@ -37,7 +37,7 @@ class LetsTalkService {
     return await task.ref.getDownloadURL();
   }
 
-  /// Web upload — uses raw bytes (Flutter Web doesn't support dart:io File)
+  /// Web: upload from bytes
   Future<String> uploadMediaBytes(Uint8List bytes, String type) async {
     final ext = type == 'image' ? 'jpg' : 'mp4';
     final fileName = '${DateTime.now().millisecondsSinceEpoch}.$ext';
