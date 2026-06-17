@@ -1,3 +1,5 @@
+import 'package:cinacleke/screens/Status_Viewer_Scren.dart';
+import 'package:cinacleke/screens/Status_composer_Screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -5,8 +7,6 @@ import 'package:intl/intl.dart';
 import '../theme/app_theme.dart';
 import '../widgets/cenacle_app_bar.dart';
 import '../services/status_service.dart';
-import 'status_composer_screen.dart';
-import 'status_viewer_screen.dart';
 
 class StatusScreen extends StatelessWidget {
   const StatusScreen({super.key});
