@@ -136,5 +136,26 @@ service cloud.firestore {
         allow update: if false;
       }
     }
+
+    // ─────────────────────────────────────────────
+    // STATUSES (24h ephemeral updates, visible to signed-in users)
+    // ─────────────────────────────────────────────
+
+    match /statuses/{statusId} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+
+      allow delete: if isSignedIn()
+        && isOwner(resource.data.userId);
+
+      // Only allow updates that touch the viewedBy map (marking as viewed).
+      // Anything else (text, imageUrl, expiresAt, etc.) must be immutable
+      // after creation.
+      allow update: if isSignedIn()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['viewedBy']);
+    }
   }
 }
