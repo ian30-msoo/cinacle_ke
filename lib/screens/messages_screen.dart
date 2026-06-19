@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cinacleke/screens/Status_Viewer_Scren.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -8,8 +9,11 @@ import '../theme/app_theme.dart';
 import '../providers/app_state.dart';
 import '../widgets/cenacle_app_bar.dart';
 import '../services/chat_service.dart';
+import '../services/status_service.dart';
 import 'message_detail_screen.dart';
 import 'user_directory_screen.dart';
+import 'status_screen.dart';
+import 'status_composer_screen.dart';
 
 class MessagesScreen extends StatelessWidget {
   const MessagesScreen({super.key});
@@ -97,6 +101,9 @@ class _RealTimeMessagesListState extends State<_RealTimeMessagesList>
       children: [
         Column(
           children: [
+            //  Status strip
+            const _StatusStrip(),
+
             //  Search bar
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -182,6 +189,259 @@ class _RealTimeMessagesListState extends State<_RealTimeMessagesList>
           ),
         ),
       ],
+    );
+  }
+}
+
+//  Status strip — horizontal "My Status" + contacts' rings, entry point
+//  into the full StatusScreen. Sits above the search bar on Messages.
+
+class _StatusStrip extends StatelessWidget {
+  const _StatusStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    final myUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final user = FirebaseAuth.instance.currentUser;
+    final myName = user?.displayName ?? user?.email?.split('@').first ?? 'You';
+
+    return Container(
+      height: 106,
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
+      ),
+      child: StreamBuilder<List<UserStatusGroup>>(
+        stream: StatusService().contactStatusesStream(),
+        builder: (context, snap) {
+          final groups = snap.data ?? [];
+
+          return ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            children: [
+              // My status — always first
+              StreamBuilder<List<StatusItem>>(
+                stream: StatusService().myStatusesStream(),
+                builder: (context, mySnap) {
+                  final myStatuses = mySnap.data ?? [];
+                  return _StatusBubble(
+                    label: 'My Status',
+                    name: myName,
+                    avatarUrl: user?.photoURL,
+                    hasStatus: myStatuses.isNotEmpty,
+                    hasUnviewed: false,
+                    isMine: true,
+                    onTap: () {
+                      if (myStatuses.isNotEmpty) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => StatusViewerScreen(
+                              group: UserStatusGroup(
+                                userId: myUid,
+                                userName: myName,
+                                userAvatar: user?.photoURL,
+                                items: myStatuses,
+                              ),
+                              isMyStatus: true,
+                            ),
+                          ),
+                        );
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const StatusComposerScreen(),
+                          ),
+                        );
+                      }
+                    },
+                  );
+                },
+              ),
+
+              // Contacts' statuses
+              ...groups.map((g) => _StatusBubble(
+                    label: g.userName,
+                    name: g.userName,
+                    avatarUrl: g.userAvatar,
+                    hasStatus: true,
+                    hasUnviewed: g.hasUnviewedFor(myUid),
+                    isMine: false,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            StatusViewerScreen(group: g, isMyStatus: false),
+                      ),
+                    ),
+                  )),
+
+              // "See all" entry into the full StatusScreen
+              _SeeAllBubble(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const StatusScreen()),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _StatusBubble extends StatelessWidget {
+  final String label;
+  final String name;
+  final String? avatarUrl;
+  final bool hasStatus;
+  final bool hasUnviewed;
+  final bool isMine;
+  final VoidCallback onTap;
+
+  const _StatusBubble({
+    required this.label,
+    required this.name,
+    this.avatarUrl,
+    required this.hasStatus,
+    required this.hasUnviewed,
+    required this.isMine,
+    required this.onTap,
+  });
+
+  String get _initials {
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              children: [
+                Container(
+                  width: 58,
+                  height: 58,
+                  padding: const EdgeInsets.all(2.5),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: hasStatus
+                        ? Border.all(
+                            color: hasUnviewed
+                                ? AppColors.primary
+                                : AppColors.border,
+                            width: 2.5,
+                          )
+                        : null,
+                  ),
+                  child: ClipOval(
+                    child: avatarUrl != null && avatarUrl!.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: avatarUrl!,
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => _initial(),
+                            errorWidget: (_, __, ___) => _initial(),
+                          )
+                        : _initial(),
+                  ),
+                ),
+                if (isMine && !hasStatus)
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 18,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryDark,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.white, width: 2),
+                      ),
+                      child: const Icon(Icons.add,
+                          color: AppColors.white, size: 12),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            SizedBox(
+              width: 64,
+              child: Text(
+                isMine ? 'My Status' : label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 11, color: AppColors.textDark),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _initial() => Container(
+        color: AppColors.primaryDark,
+        child: Center(
+          child: Text(_initials,
+              style: const TextStyle(
+                  color: AppColors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18)),
+        ),
+      );
+}
+
+class _SeeAllBubble extends StatelessWidget {
+  final VoidCallback onTap;
+  const _SeeAllBubble({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 58,
+              height: 58,
+              decoration: const BoxDecoration(
+                color: AppColors.surfaceLight,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.donut_large_outlined,
+                  color: AppColors.primary, size: 24),
+            ),
+            const SizedBox(height: 4),
+            const SizedBox(
+              width: 64,
+              child: Text(
+                'See all',
+                maxLines: 1,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
