@@ -57,8 +57,6 @@ class _RealTimeMessagesListState extends State<_RealTimeMessagesList>
     WidgetsBinding.instance.addObserver(this);
     ChatService().setOnline();
 
-    // FIX: refresh presence every 2 minutes so lastSeen stays fresh
-    // and the 5-min staleness check in ChatService works correctly
     _presenceTimer = Timer.periodic(
       const Duration(minutes: 2),
       (_) => ChatService().setOnline(),
@@ -463,7 +461,6 @@ class _ConvoTile extends StatelessWidget {
 
     return ListTile(
       onTap: () {
-        // FIX: push MessageDetailScreen directly — no extra back-stack issue
         Navigator.push(
           context,
           MaterialPageRoute(

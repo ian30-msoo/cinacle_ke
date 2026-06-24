@@ -38,11 +38,8 @@ class _UserDirectoryScreenState extends State<UserDirectoryScreen> {
       final convId = await ChatService().getOrCreateConversation(user.uid);
       if (!mounted) return;
 
-      // FIX: pop the directory first, then push the chat.
-      // This means back from chat → MessagesScreen (not directory).
       Navigator.pop(context);
       Navigator.push(
-        // ignore: use_build_context_synchronously
         context,
         MaterialPageRoute(
           builder: (_) => MessageDetailScreen(

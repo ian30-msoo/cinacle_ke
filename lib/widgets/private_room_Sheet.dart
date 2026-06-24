@@ -99,7 +99,6 @@ class _PrivateRoomsSheetState extends State<PrivateRoomsSheet>
             child: TabBarView(
               controller: _tab,
               children: [
-                // ── FIX: pass full user object, not just uid ──
                 _MyRoomsTab(service: widget.service, user: widget.user),
                 _JoinRoomTab(service: widget.service, user: widget.user),
               ],
@@ -118,9 +117,6 @@ class _PrivateRoomsSheetState extends State<PrivateRoomsSheet>
     );
   }
 }
-
-// ── My Rooms tab ──
-// FIX: changed from userId:String to user:User so we have name + avatar
 
 class _MyRoomsTab extends StatelessWidget {
   final LetsTalkService service;
