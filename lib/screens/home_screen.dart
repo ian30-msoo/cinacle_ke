@@ -104,6 +104,13 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -179,11 +186,11 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeroBanner(),
+          _buildGreetingSection(),
           _buildTodaysDevotionSection(),
           _buildUpcomingEventsSection(),
-          _buildServiceTimesSection(),
           _buildLetsTalkSection(),
-          _buildMediaLibrarySection(),
+          _buildMediaLibraryBanner(),
           _buildMinistriesSection(),
           const SizedBox(height: 20),
         ],
@@ -330,24 +337,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   "Shaped into Christ's fullness",
                   style: TextStyle(color: Color(0xE6FFFFFF), fontSize: 13),
                 ),
-                const SizedBox(height: 4),
-                const Text(
-                  'A SURE\nFOUNDATION',
-                  style: TextStyle(
-                    color: AppColors.gold,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    height: 1.1,
-                  ),
-                ),
-                const Text(
-                  'Abiding in the Word',
-                  style: TextStyle(
-                    color: Color(0xCCFFFFFF),
-                    fontSize: 12,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -404,6 +393,77 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildGreetingSection() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${_greeting()}, Miller ✨',
+            style: const TextStyle(
+              fontSize: 19,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textDark,
+            ),
+          ),
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: widget.onViewLetsTalk,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: const BoxDecoration(
+                      color: Color(0x1AF1C40F),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.chat_bubble_outline,
+                        color: AppColors.gold, size: 16),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'What has been on your heart and mind lately?',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          "Share it in Let's Talk",
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.arrow_forward,
+                      size: 16, color: AppColors.gold),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTodaysDevotionSection() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
@@ -416,9 +476,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Text(
                   "TODAY'S DEVOTION",
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textDark,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ),
@@ -431,7 +492,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 child: const Text(
-                  'View All →',
+                  'Explore more →',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                 ),
               ),
@@ -441,106 +502,112 @@ class _HomeScreenState extends State<HomeScreen> {
           GestureDetector(
             onTap: widget.onViewDevotionDetail,
             child: Container(
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: AppColors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.border),
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: SizedBox(
-                        width: 66,
-                        height: 66,
-                        child: CachedNetworkImage(
-                          imageUrl:
-                              'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=200&q=80',
-                          fit: BoxFit.cover,
-                          placeholder: (_, __) => Container(
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Color(0xFF1565C0),
-                                  Color(0xFF0D47A1),
-                                ],
-                              ),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: SizedBox(
+                      width: 56,
+                      height: 56,
+                      child: CachedNetworkImage(
+                        imageUrl:
+                            'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=200&q=80',
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) => Container(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFF1565C0),
+                                Color(0xFF0D47A1),
+                              ],
                             ),
-                            child: const Icon(Icons.menu_book,
-                                color: Color(0x73FFFFFF), size: 32),
                           ),
-                          errorWidget: (_, __, ___) => Container(
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Color(0xFF1565C0),
-                                  Color(0xFF0D47A1),
-                                ],
-                              ),
+                          child: const Icon(Icons.menu_book,
+                              color: Color(0x73FFFFFF), size: 28),
+                        ),
+                        errorWidget: (_, __, ___) => Container(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFF1565C0),
+                                Color(0xFF0D47A1),
+                              ],
                             ),
-                            child: const Icon(Icons.menu_book,
-                                color: Color(0x73FFFFFF), size: 32),
                           ),
+                          child: const Icon(Icons.menu_book,
+                              color: Color(0x73FFFFFF), size: 28),
                         ),
                       ),
                     ),
                   ),
-                  const Expanded(
-                    child: Padding(
-                      padding:
-                          EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'KNOWING VS BELIEVE',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textDark,
-                            ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'SETTING LOVE',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textDark,
                           ),
-                          SizedBox(height: 4),
-                          Text(
-                            'John 17.3 - "For this is eternal life, that they may know You, the one true God."',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textMuted,
-                              height: 1.4,
-                            ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Psalms 91.14',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.gold,
                           ),
-                          SizedBox(height: 6),
-                          Row(
-                            children: [
-                              Text(
-                                'Daily Bread',
-                                style: TextStyle(
-                                  color: AppColors.gold,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          '"Because he has set his love on me I will deliver him."',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                            height: 1.4,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: const [
+                            Text(
+                              'Daily Bread',
+                              style: TextStyle(
+                                color: AppColors.gold,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
                               ),
-                              SizedBox(width: 8),
-                              Text(
-                                'Mar 5',
-                                style: TextStyle(
-                                  color: AppColors.textMuted,
-                                  fontSize: 12,
-                                ),
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'May 29',
+                              style: TextStyle(
+                                color: AppColors.textMuted,
+                                fontSize: 12,
                               ),
-                            ],
-                          ),
-                        ],
-                      ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 12),
                 ],
               ),
             ),
@@ -551,6 +618,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildUpcomingEventsSection() {
+    // TODO: wire up to real events data source. Showing a single sample
+    // event row to match the approved design; falls back to an empty
+    // state automatically when AppData/events list is empty.
+    final hasEvent = true;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Container(
@@ -559,7 +631,7 @@ class _HomeScreenState extends State<HomeScreen> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.border),
         ),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -575,110 +647,118 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textDark,
-                      letterSpacing: 1,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),
-                const Text(
-                  '0 events',
-                  style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                Text(
+                  hasEvent ? '1 events' : '0 events',
+                  style:
+                      const TextStyle(fontSize: 12, color: AppColors.textMuted),
                 ),
               ],
             ),
             const SizedBox(height: 10),
-            const Text(
-              'No upcoming events scheduled',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: AppColors.textMuted),
-            ),
+            if (!hasEvent)
+              const Text(
+                'No upcoming events scheduled',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
+                          ),
+                        ),
+                        child: const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'LIFE',
+                                style: TextStyle(
+                                  color: AppColors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              Text(
+                                'Jul 5',
+                                style: TextStyle(
+                                  color: Color(0xCCFFFFFF),
+                                  fontSize: 9,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'OUR MONTHLY FELLOWSHIP',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textDark,
+                            ),
+                          ),
+                          SizedBox(height: 3),
+                          Row(
+                            children: [
+                              Icon(Icons.access_time,
+                                  size: 11, color: AppColors.textMuted),
+                              SizedBox(width: 3),
+                              Text(
+                                '20:45 - 22:00',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Icon(Icons.location_on_outlined,
+                                  size: 11, color: AppColors.textMuted),
+                              SizedBox(width: 3),
+                              Text(
+                                'Google meet',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right,
+                        size: 18, color: AppColors.textMuted),
+                  ],
+                ),
+              ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildServiceTimesSection() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(bottom: 12),
-            child: Text(
-              'Service Times',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textDark,
-              ),
-            ),
-          ),
-          const Divider(height: 1, color: AppColors.border),
-          const SizedBox(height: 12),
-          Row(
-            children: AppData.serviceTimes.map((s) {
-              return Expanded(
-                child: Container(
-                  margin: AppData.serviceTimes.indexOf(s) <
-                          AppData.serviceTimes.length - 1
-                      ? const EdgeInsets.only(right: 8)
-                      : EdgeInsets.zero,
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFEEEEEE),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.church,
-                            color: AppColors.gold, size: 20),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        s['day']!,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textDark,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        s['service']!,
-                        style: const TextStyle(
-                          fontSize: 9,
-                          color: AppColors.textMuted,
-                          height: 1.3,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        s['time']!,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textDark,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ],
       ),
     );
   }
@@ -696,11 +776,12 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
-                  "Let's Talk",
+                  "LET'S TALK",
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textDark,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ),
@@ -713,7 +794,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 child: const Text(
-                  'View All →',
+                  'Explore more →',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                 ),
               ),
@@ -723,6 +804,7 @@ class _HomeScreenState extends State<HomeScreen> {
           GestureDetector(
             onTap: () => widget.onTabChange(1),
             child: Container(
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: AppColors.white,
                 borderRadius: BorderRadius.circular(12),
@@ -731,73 +813,141 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Row(
+                    children: [
+                      const CircleAvatar(
+                        radius: 16,
+                        backgroundColor: Color(0xFFE0E0E0),
+                        child: Icon(Icons.person,
+                            size: 16, color: AppColors.textMuted),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'Charis',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textDark,
+                              ),
+                            ),
+                            Text(
+                              '5 months ago',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0x1AF1C40F),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          'TRENDING',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.gold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Church & Government',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'What is the role of the church in a political world?',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textMuted,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryDark,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        topRight: Radius.circular(12),
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border(
+                        left: BorderSide(color: AppColors.gold, width: 3),
                       ),
                     ),
                     child: Row(
-                      children: const [
-                        Icon(Icons.thumb_up, color: AppColors.white, size: 14),
-                        SizedBox(width: 8),
-                        Text(
-                          'Trending discussion',
-                          style: TextStyle(
-                            color: AppColors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                      children: [
+                        const CircleAvatar(
+                          radius: 12,
+                          backgroundColor: Color(0xFFE0E0E0),
+                          child: Icon(Icons.person,
+                              size: 12, color: AppColors.textMuted),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                'Zion Elichrist',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.gold,
+                                ),
+                              ),
+                              Text(
+                                '"Wow 🙌🔥🔥"',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Social media and Christianity',
+                  const SizedBox(height: 10),
+                  Row(
+                    children: const [
+                      Text(
+                        '3 others talking',
+                        style:
+                            TextStyle(fontSize: 11, color: AppColors.textMuted),
+                      ),
+                      Spacer(),
+                      Icon(Icons.favorite_border,
+                          size: 14, color: AppColors.textMuted),
+                      SizedBox(width: 4),
+                      Text('5',
                           style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textDark,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'Social media and Christianity can intersect in various ways. Some Christians use social media as a platform to share their faith, connect with others, and find...',
+                              fontSize: 12, color: AppColors.textMuted)),
+                      SizedBox(width: 14),
+                      Icon(Icons.chat_bubble_outline,
+                          size: 14, color: AppColors.textMuted),
+                      SizedBox(width: 4),
+                      Text('3',
                           style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textMuted,
-                            height: 1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: const [
-                            Icon(Icons.thumb_up_outlined,
-                                size: 13, color: AppColors.textMuted),
-                            SizedBox(width: 4),
-                            Text('6 likes',
-                                style: TextStyle(
-                                    fontSize: 12, color: AppColors.textMuted)),
-                            SizedBox(width: 16),
-                            Icon(Icons.chat_bubble_outline,
-                                size: 13, color: AppColors.textMuted),
-                            SizedBox(width: 4),
-                            Text('2 replies',
-                                style: TextStyle(
-                                    fontSize: 12, color: AppColors.textMuted)),
-                          ],
-                        ),
-                      ],
-                    ),
+                              fontSize: 12, color: AppColors.textMuted)),
+                    ],
                   ),
                 ],
               ),
@@ -808,118 +958,60 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMediaLibrarySection() {
+  Widget _buildMediaLibraryBanner() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.play_circle_outline,
-                  color: AppColors.gold, size: 18),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'Media Library',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textDark,
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const MediaLibraryScreen()),
-                ),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.gold,
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text(
-                  'View All →',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
+      child: GestureDetector(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MediaLibraryScreen()),
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            color: const Color(0x14F1C40F),
+            borderRadius: BorderRadius.circular(30),
           ),
-          const SizedBox(height: 12),
-          GridView.builder(
-            physics: const NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-              childAspectRatio: 2.2,
-            ),
-            itemCount: AppData.mediaItems.length,
-            itemBuilder: (_, index) {
-              final item = AppData.mediaItems[index];
-              return Container(
-                key: ValueKey('media_item_$index'),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: AppColors.gold,
+                  shape: BoxShape.circle,
                 ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                child: Row(
+                child: const Icon(Icons.play_arrow,
+                    color: AppColors.white, size: 20),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFE8F4F6),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        item['icon'] == 'music'
-                            ? Icons.music_note
-                            : Icons.description_outlined,
-                        color: AppColors.primary,
-                        size: 18,
+                    Text(
+                      'Media Library',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textDark,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            item['title']!,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textDark,
-                              height: 1.2,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            item['type']!,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                        ],
+                    SizedBox(height: 2),
+                    Text(
+                      'Videos, audio & books',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textMuted,
                       ),
                     ),
                   ],
                 ),
-              );
-            },
+              ),
+              const Icon(Icons.arrow_forward, size: 16, color: AppColors.gold),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1002,8 +1094,6 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Row(
             children: const [
-              Icon(Icons.groups_outlined, color: AppColors.gold, size: 18),
-              SizedBox(width: 8),
               Text(
                 'Our Ministries',
                 style: TextStyle(
@@ -1012,10 +1102,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: AppColors.textDark,
                 ),
               ),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(left: 10),
+                  child: Divider(color: AppColors.border, height: 1),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 8),
-          const Divider(height: 1, color: AppColors.border),
           const SizedBox(height: 12),
           GridView.builder(
             physics: const NeverScrollableScrollPhysics(),
