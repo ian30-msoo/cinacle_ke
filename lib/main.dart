@@ -12,9 +12,6 @@ import 'screens/sign_in_screen.dart';
 import 'screens/sign_up_screen.dart';
 import 'services/notification_service.dart';
 
-@pragma('vm:entry-point')
-Future<void> firebaseMessagingBackgroundHandler(RemoteMessage msg) async {}
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -22,6 +19,10 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // The background handler now lives ONLY in notification_service.dart.
+  // Previously this file declared its own empty stub with the same name,
+  // which silently shadowed the real implementation and meant background
+  // notifications were always running a no-op.
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   await NotificationService.instance.init();
 
